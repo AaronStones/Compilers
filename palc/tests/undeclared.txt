@@ -1,6 +1,0 @@
-PROGRAM SumAndProduct 
-WITH j AS REAL
-IN
-    i = 123
-    OUTPUT i * j
-END

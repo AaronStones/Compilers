@@ -1,3 +1,0 @@
-[submodule "tests"]
-	path = tests
-	url = git@github.com:amyinorbit/PALTests.git

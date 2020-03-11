@@ -1,5 +1,0 @@
-PROGRAM
-WITH a, b AS REAL IN
-    a = 1.0
-    b = 2.0
-END
