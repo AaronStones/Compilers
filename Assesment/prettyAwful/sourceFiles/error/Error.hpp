@@ -13,13 +13,13 @@
 /// The base representation of a PAL language error.
 class Error {
 protected:
-    RC<Token>    token_;
-    String          message_;
+    rec<Token>    token_;
+    str          message_;
     
 public:
     
     /// Creates an error that originates at [token], with [message].
-    Error(RC<Token> token, const String& message);
+    Error(rec<Token> token, const str& message);
     
     /// Error destructor
     virtual ~Error();
@@ -28,8 +28,8 @@ public:
     
     // MARK: - straight getters
     
-    const RC<Token> token() const { return token_; }
-    const String& message() const { return message_; }
+    const rec<Token> token() const { return token_; }
+    const str& message() const { return message_; }
 };
 
 /// Comparison function to allow sorting errors at the end of the compiler

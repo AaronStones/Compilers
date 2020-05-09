@@ -1,10 +1,3 @@
-//
-//  common.hpp - Convenience defines and typedefs used accross the project.
-//  PAL Compiler
-//
-//  Created by Amy Parent on 2017-02-17.
-//  Copyright © 2017 Amy Parent. All rights reserved.
-//
 #pragma once
 #include <string>
 #include <vector>
@@ -12,16 +5,16 @@
 #include <unordered_map>
 #include <memory>
 
-using String = std::string;
+using str = std::string;
 
 template <typename T>
-using Vector = std::vector<T>;
+using vec = std::vector<T>;
 
-template <typename K, typename V>
-using Map = std::unordered_map<K, V>;
+template <typename H, typename R>
+using mp = std::unordered_map<H, R>;
 
-template <typename T>
-using RC = std::shared_ptr<T>;
+template <typename X>
+using rec = std::shared_ptr<X>;
 
 using Int64 = std::int64_t;
 using UInt64 = std::uint64_t;

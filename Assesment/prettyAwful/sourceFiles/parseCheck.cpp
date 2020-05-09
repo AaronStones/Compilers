@@ -1,12 +1,6 @@
-//
-//  PALParser.cpp - PAL Compiler's parser implementation
-//  PAL Compiler
-//
-//  Created by Amy Parent on 2017-02-17.
-//  Copyright © 2017 Amy Parent. All rights reserved.
-//
 #include <sstream>
 #include <algorithm>
+
 #include "error/SyntaxError.hpp"
 #include "parseCheck.hpp"
 
@@ -25,7 +19,7 @@ bool PALParser::invoke() {
     scanner_.nextToken();
     recProgram();
     
-    std::sort(errors_.begin(), errors_.end(), [](const RC<Error>& a, const RC<Error>& b) {
+    std::sort(errors_.begin(), errors_.end(), [](const rec<Error>& a, const rec<Error>& b) {
         return *a < *b;
     });
     return errors_.size() == 0;
@@ -33,7 +27,7 @@ bool PALParser::invoke() {
 
 // MARK: - Recursive Descent utilities
 
-bool PALParser::have(const String& type) const {
+bool PALParser::have(const str& type) const {
     if(!scanner_.currentToken()){ 
         return false;
     }
@@ -42,7 +36,7 @@ bool PALParser::have(const String& type) const {
     }
 }
 
-void PALParser::mustBe(const String& type) {
+void PALParser::mustBe(const str& type) {
     if(recovering_) {
         // If we're in recovery, we keep skipping until we find the token type
         // we wanted, without printing more errors.
@@ -67,7 +61,7 @@ void PALParser::mustBe(const String& type) {
     }
 }
 
-void PALParser::syntaxError(const String& expected) {
+void PALParser::syntaxError(const str& expected) {
     if(recovering_) { 
         return; 
     }
@@ -131,8 +125,8 @@ void PALParser::recVarDecls() {
 }
 
 // <IdentList> ::= Identifier ( , Identifier)* ;
-Vector<RC<Token>> PALParser::recIdentList() {
-    Vector<RC<Token>> idents;
+vec<rec<Token>> PALParser::recIdentList() {
+    vec<rec<Token>> idents;
     idents.push_back(scanner_.currentToken());
     mustBe(Token::Identifier);
     

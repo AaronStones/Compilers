@@ -22,10 +22,10 @@ class PALScanner {
     std::istream&   input_;
     
     /// The current line being parsed. We use this for better error signaling.
-    String          currentLine_;
+    str          currentLine_;
     
     /// A pointer to the current token.
-    RC<Token>    currentToken_;
+    rec<Token>    currentToken_;
     
     /// The current character.
     char            currentChar_;
@@ -44,7 +44,7 @@ class PALScanner {
 public:
     
     /// The list of reserved keywords in PAL.
-    static const Vector<String> keywords;
+    static const vec<str> keywords;
     
     /// Creates a scanner for the file pointed to by [input].
     PALScanner(std::istream& input);
@@ -56,12 +56,12 @@ public:
     void nextChar();
     
     /// Lexes the next token in the source and returns.
-    const RC<Token> nextToken();
+    const rec<Token> nextToken();
     
     // MARK: - straight getters.
     
     char currentChar() const { return currentChar_; }
-    const RC<Token> currentToken() const { return currentToken_; }
+    const rec<Token> currentToken() const { return currentToken_; }
     UInt64 line() const { return line_; }
     UInt64 column() const { return idx_ + 1; }
 };

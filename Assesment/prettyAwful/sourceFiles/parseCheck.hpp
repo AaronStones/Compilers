@@ -22,7 +22,7 @@ class PALParser {
     bool                recovering_;
     
     /// The errors generated during compilation.
-    Vector<RC<Error>> errors_;
+    vec<rec<Error>> errors_;
     
     /// Semantics checker.
     PALSemantics        semantics_;
@@ -31,16 +31,16 @@ class PALParser {
     CodeGen             codegen_;
     
     /// Returns true if the current token being parsed is of [type].
-    bool have(const String& type) const;
+    bool have(const str& type) const;
     
     /// Checks if the current token is of [type] and consumes it, and otherwise
     /// sends the parser into recovery mode. If the parser is recovering,
     /// mustBe() will consume tokens until it reaches one of [type].
-    void mustBe(const String& type);
+    void mustBe(const str& type);
     
     /// Generates a syntax error at the scanner's current token, and puts the
     /// parser in recovery mode
-    void syntaxError(const String& expected);
+    void syntaxError(const str& expected);
     
     // <Program> ::= ...
     void recProgram();
@@ -49,7 +49,7 @@ class PALParser {
     void recVarDecls();
     
     // <IdentList> ::= Identifier ( , Identifier)* ;
-    Vector<RC<Token>> recIdentList();
+    vec<rec<Token>> recIdentList();
     
     void recStatementBlock();
     
@@ -102,5 +102,5 @@ public:
     
     CodeGen generator() const { return codegen_; }
     bool isRecovering() const { return recovering_; }
-    const Vector<RC<Error>>& errors() const { return errors_; }
+    const vec<rec<Error>>& errors() const { return errors_; }
 };

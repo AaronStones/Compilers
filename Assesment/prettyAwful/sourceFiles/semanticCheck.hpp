@@ -25,36 +25,36 @@ class PALSemantics {
     /// variables are declared. This allows better error printing
     struct Declaration {
         PALType         type;
-        RC<Token>    where;
+        rec<Token>    where;
     };
     
     /// Map of all declared variables and their types.
-    Map<String, Declaration> variables_;
+    mp<str, Declaration> variables_;
     
     /// A reference to the compiler's list of errors/
-    Vector<RC<Error>>&   errors_;
+    vec<rec<Error>>&   errors_;
     
     /// Returns the type name for a PALType enum value.
-    String typeName(PALType type);
+    str typeName(PALType type);
     
     /// Logs a generic semantics analysis error.
-    void semanticsError(RC<Token> op, const String& message);
+    void semanticsError(rec<Token> op, const str& message);
     
     // Logs a bad variable assignment error.
-    void assignmentError(RC<Token> op, RC<Token> decl,
+    void assignmentError(rec<Token> op, rec<Token> decl,
                          PALType lhs, PALType rhs);
     
     /// Logs a type conflict error.
-    void expressionError(RC<Token> op, const String& type,
+    void expressionError(rec<Token> op, const str& type,
                          PALType lhs, PALType rhs);
     
-    void variableError(RC<Token> op, RC<Token> decl,
-                       const String& message);
+    void variableError(rec<Token> op, rec<Token> decl,
+                       const str& message);
 
 public:
     
     /// Creates a semantics analyser.
-    PALSemantics(Vector<RC<Error>>& errors)
+    PALSemantics(vec<rec<Error>>& errors)
         : errors_(errors) {}
     
     /// PALSemantics destructor.
@@ -62,36 +62,36 @@ public:
     
     /// Declares a the variable [var], with [type]. If a variable is already
     /// declared with that name, logs an error.
-    void declareVariable(RC<Token> var, PALType type);
+    void declareVariable(rec<Token> var, PALType type);
     
     /// Returns whether [var] has been declared.
-    bool variableExists(RC<Token> var);
+    bool variableExists(rec<Token> var);
     
     /// Returns the token where the variable referenced by [var] is declared.
-    RC<Token> variableDecl(RC<Token> var);
+    rec<Token> variableDecl(rec<Token> var);
     
     /// Returns the type of [var], or [PALType::Invalid] if it hasn't been
     /// declared previously.
-    PALType variableType(RC<Token> var);
+    PALType variableType(rec<Token> var);
     
     /// Checks that a [var] is declared, and returns its type. This is
     /// essentially the same as [variableType()], except it logs the semantic
     /// error.
-    PALType checkVariable(RC<Token> var);
+    PALType checkVariable(rec<Token> var);
     
     /// Returns the type of a the language value pointed to by [value].
-    PALType checkValue(RC<Token> value);
+    PALType checkValue(rec<Token> value);
     
     /// Returns the type of an the expression [lhs] [op] [rhs]. If the
     /// expression is invlaid, logs a type mismatch error.
-    PALType checkExpression(RC<Token> op, PALType lhs, PALType rhs);
+    PALType checkExpression(rec<Token> op, PALType lhs, PALType rhs);
     
     /// Checks that the boolean expression [lhs] [op] [rhs] is valid, or
     /// logs a type mismatch error.
-    void checkBoolean(RC<Token> op, PALType lhs, PALType rhs);
+    void checkBoolean(rec<Token> op, PALType lhs, PALType rhs);
     
     /// Checks that [var] = [rhs] is a valid assignment. If the [var] is not
     /// declared or [var] and [rhs] are of different types, an error is logged.
-    void checkAssignment(RC<Token> op, RC<Token> var, PALType rhs);
+    void checkAssignment(rec<Token> op, rec<Token> var, PALType rhs);
 
 };
