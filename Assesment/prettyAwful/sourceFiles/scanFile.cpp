@@ -8,7 +8,7 @@
 #include <sstream>
 #include <cctype>
 #include <algorithm>
-#include "PALScanner.hpp"
+#include "scanFile.hpp"
 
 const Vector<String> PALScanner::keywords = {
 	"PROGRAM", "WITH", "IN", "END", "AS", "INTEGER", "REAL", "UNTIL","REPEAT",

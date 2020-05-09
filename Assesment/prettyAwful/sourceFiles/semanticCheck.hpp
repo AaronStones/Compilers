@@ -6,8 +6,8 @@
 //  Copyright © 2017 Amy Parent. All rights reserved.
 //
 #pragma once
-#include "common.hpp"
-#include "Token.hpp"
+#include "declVar.hpp"
+#include "tokenHandler.hpp"
 #include "error/Error.hpp"
 
 /// Represents the type of a variable, value or expression.

@@ -7,7 +7,7 @@
 //
 #pragma once
 #include <iostream>
-#include "../common.hpp"
+#include "../declVar.hpp"
 #include "ILWriter.hpp"
 #include "ILBuilder.hpp"
 #include "OrbitCode.hpp"

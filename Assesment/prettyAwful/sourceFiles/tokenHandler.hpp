@@ -8,7 +8,7 @@
 #pragma once
 #include <cstring>
 #include <iostream>
-#include "common.hpp"
+#include "declVar.hpp"
 
 /// The representation of a PAL language token
 class Token {

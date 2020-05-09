@@ -8,9 +8,9 @@
 #include <iostream>
 #include <cstdlib>
 #include <fstream>
-#include "common.hpp"
-#include "PALScanner.hpp"
-#include "PALParser.hpp"
+#include "declVar.hpp"
+#include "scanFile.hpp"
+#include "parseCheck.hpp"
  
 int main(int argc, const char** args) {
 

@@ -7,11 +7,11 @@
 //
 #pragma once
 #include <iostream>
-#include "common.hpp"
+#include "declVar.hpp"
 #include "codegen/CodeGen.hpp"
-#include "PALScanner.hpp"
+#include "scanFile.hpp"
 #include "error/Error.hpp"
-#include "PALSemantics.hpp"
+#include "semanticCheck.hpp"
 
 class PALParser {
     

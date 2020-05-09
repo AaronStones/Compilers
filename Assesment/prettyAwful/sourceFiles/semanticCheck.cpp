@@ -6,7 +6,7 @@
 //  Copyright © 2017 Amy Parent. All rights reserved.
 //
 #include <sstream>
-#include "PALSemantics.hpp"
+#include "semanticCheck.hpp"
 #include "error/VariableError.hpp"
 #include "error/ExprError.hpp"
 

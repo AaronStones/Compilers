@@ -8,7 +8,7 @@
 #include <sstream>
 #include <algorithm>
 #include "error/SyntaxError.hpp"
-#include "PALParser.hpp"
+#include "parseCheck.hpp"
 
 PALParser::PALParser(PALScanner& scanner)
 : scanner_(scanner)

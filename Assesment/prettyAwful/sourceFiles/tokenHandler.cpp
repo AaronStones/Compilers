@@ -5,7 +5,7 @@
 //  Created by Amy Parent on 2017-02-17.
 //  Copyright © 2017 Amy Parent. All rights reserved.
 //
-#include "Token.hpp"
+#include "tokenHandler.hpp"
 
 const String Token::Identifier   = "identifier";
 const String Token::Real         = "real";

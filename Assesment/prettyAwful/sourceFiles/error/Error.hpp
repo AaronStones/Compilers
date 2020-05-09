@@ -7,8 +7,8 @@
 //
 #pragma once
 #include <iostream>
-#include "../common.hpp"
-#include "../Token.hpp"
+#include "../declVar.hpp"
+#include "../tokenHandler.hpp"
 
 /// The base representation of a PAL language error.
 class Error {
