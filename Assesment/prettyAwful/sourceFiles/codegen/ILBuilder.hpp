@@ -7,9 +7,10 @@
 //
 #pragma once
 #include <cstdint>
-#include "../declVar.hpp"
 #include "OrbitCode.hpp"
 #include "ILWriter.hpp"
+#include "../declVar.hpp"
+
 
 struct ILInstruction;
 struct ILFunction;
@@ -38,13 +39,13 @@ struct ILInstruction {
     
     void setOperand(uint16_t operand);
     
-    void setOperand(const str& operand);
+    void setOperand(const std::string& operand);
     
     bool complete() const { return complete_; }
     
     int8_t stackEffect() const { return effect_; }
     
-    const str& label() const { return label_; }
+    const std::string& label() const { return label_; }
     
     void pack(ILWriter& writer) const;
     
@@ -58,12 +59,12 @@ private:
     
     OperandSize     operandSize_;
     uint16_t        operand_;
-    str          label_;
+    std::string          label_;
 };
 
 struct ILFunction {
     
-    ILFunction(ILBuilder* builder, const str& signature)
+    ILFunction(ILBuilder* builder, const std::string& signature)
         : builder_(builder), signature_(signature), arity_(0), insertPoint_(0) {}
     
     virtual ~ILFunction() {}
@@ -72,15 +73,15 @@ struct ILFunction {
     
     void finishInstruction();
     
-    void addSymbol(const str& symbol);
+    void addSymbol(const std::string& symbol);
     
-    void addParam(const str& param);
+    void addParam(const std::string& param);
     
-    void addLocal(const str& local);
+    void addLocal(const std::string& local);
     
-    uint16_t getSymbol(const str& symbol);
+    uint16_t getSymbol(const std::string& symbol);
     
-    uint8_t getLocal(const str& local);
+    uint8_t getLocal(const std::string& local);
     
     void validate();
     
@@ -89,13 +90,13 @@ struct ILFunction {
 private:
     
     ILBuilder*              builder_;
-    str                  signature_;
+    std::string                  signature_;
     int8_t                  stackEffect_;
     uint8_t                 arity_;
     uint16_t                insertPoint_;
     
-    mp<str, uint16_t>   symbols_;
-    vec<str>          locals_;
+    mp<std::string, uint16_t>   symbols_;
+    vec<std::string>          locals_;
     vec<ILInstruction>   byteCode_;
 };
 
@@ -107,11 +108,11 @@ enum class ILType {
 struct ILConstant {
     
     ILType  type;
-    str  stringValue;
+    std::string  stringValue;
     double  numValue;
     
     ILConstant(double number) : type(ILType::Number), stringValue(""), numValue(number) {}
-    ILConstant(const str& str) : type(ILType::String), stringValue(str), numValue(0) {}
+    ILConstant(const std::string& str) : type(ILType::String), stringValue(str), numValue(0) {}
     
     void pack(ILWriter& writer) const;
 };
@@ -123,31 +124,31 @@ class ILBuilder {
     
     vec<ILConstant>  constants_;
     vec<ILFunction>  functions_;
-    vec<str>      globals_;
+    vec<std::string>      globals_;
     
-    static const mp<str, OrbitCode> opCodes_;
+    static const mp<std::string, OrbitCode> opCodes_;
     
     friend std::ostream& operator<<(std::ostream& out, const ILBuilder& builder);
     
 public:
     
-    static OrbitCode opcode(const str& mnemonic);
+    static OrbitCode opcode(const std::string& mnemonic);
     
     ILBuilder() : currentFn_(nullptr)  {}
     
     ~ILBuilder() {}
     
-    ILFunction* openFunction(const str& signature);
+    ILFunction* openFunction(const std::string& signature);
     
     ILFunction* function() { return currentFn_; }
     
     void closeFunction();
     
-    void addGlobal(const str& global);
+    void addGlobal(const std::string& global);
     
-    uint16_t getGlobal(const str& global);
+    uint16_t getGlobal(const std::string& global);
     
-    uint16_t addConstant(str string);
+    uint16_t addConstant(std::string string);
     
     uint16_t addConstant(double number);
     

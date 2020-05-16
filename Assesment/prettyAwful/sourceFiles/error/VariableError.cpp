@@ -7,7 +7,7 @@
 //
 #include "VariableError.hpp"
 
-VariableError::VariableError(RC<Token> token, RC<Token> varDecl, const String& message)
+VariableError::VariableError(rec<lexToke> token, rec<lexToke> varDecl, const std::string& message)
 : Error(token, message)
 , declaration_(varDecl) {
 }
@@ -36,7 +36,7 @@ void VariableError::print(std::ostream& out) const {
 #endif
     out << "variable '" << where->value() << "' was declared here";
     
-    if(!where->is(Token::EndOfFile)) {
+    if(!where->is(lexToke::eof)) {
         out << std::endl << *where;
     }
 }

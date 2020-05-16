@@ -7,7 +7,7 @@
 //
 #include "Error.hpp"
 
-Error::Error(RC<Token> token, const String& message)
+Error::Error(rec<lexToke> token, const std::string& message)
 : token_(token)
 , message_(message) {
     
@@ -30,23 +30,13 @@ int compare(const Error& lhs, const Error& rhs) {
 /// and error message.
 void Error::print(std::ostream& out) const {
     
-#ifdef ERROR_COLORFUL
-    out << BOLDWHITE;
-#endif
     out << token()->line() << ":" << token()->column() << ": ";
-#ifdef ERROR_COLORFUL
-    out << BOLDRED;
-#endif
+
     out << "error: ";
-#ifdef ERROR_COLORFUL
-    out << BOLDWHITE;
-#endif
+
     out << message();
-#ifdef ERROR_COLORFUL
-    out << RESET;
-#endif
-    
-    if(!token()->is(Token::EndOfFile)) {
+
+    if(!token()->is(lexToke::eof)) {
         out << std::endl << *token();
     }
 }

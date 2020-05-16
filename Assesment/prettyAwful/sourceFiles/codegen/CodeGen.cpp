@@ -11,7 +11,7 @@
 // And here we have the code -> mnemonic conversion table. This uses the
 // x-macro too.
 #define OPCODE(x, _, __) #x,
-static const String mnemonics[] = {
+static const std::string mnemonics[] = {
 #include "orbit_opcodes.h"
 };
 #undef OPCODE
@@ -45,16 +45,16 @@ void CodeGen::closeIf() {
     ifStack_.pop_back();
 }
 
-String CodeGen::ifLabel() {
-    return String("if_") + std::to_string(ifStack_.back());
+std::string CodeGen::ifLabel() {
+    return std::string("if_") + std::to_string(ifStack_.back());
 }
 
-String CodeGen::elseLabel() {
-    return String("else_") + std::to_string(ifStack_.back());
+std::string CodeGen::elseLabel() {
+    return std::string("else_") + std::to_string(ifStack_.back());
 }
 
-String CodeGen::endifLabel() {
-    return String("endif_") + std::to_string(ifStack_.back());
+std::string CodeGen::endifLabel() {
+    return std::string("endif_") + std::to_string(ifStack_.back());
 }
 
 void CodeGen::startLoop() {
@@ -66,15 +66,15 @@ void CodeGen::closeLoop() {
     loopStack_.pop_back();
 }
 
-String CodeGen::loopLabel() {
-    return String("loop_") + std::to_string(loopStack_.back());
+std::string CodeGen::loopLabel() {
+    return std::string("loop_") + std::to_string(loopStack_.back());
 }
 
-String CodeGen::endLoopLabel() {
-    return String("endloop_") + std::to_string(loopStack_.back());
+std::string CodeGen::endLoopLabel() {
+    return std::string("endloop_") + std::to_string(loopStack_.back());
 }
 
-void CodeGen::local(const String& name) {
+void CodeGen::local(const std::string& name) {
     builder_.function()->addLocal(name);
 }
 
@@ -84,20 +84,20 @@ void CodeGen::emitNum(OrbitCode code, double arg) {
     builder_.function()->finishInstruction();
 }
 
-void CodeGen::emitVar(OrbitCode code, const String& arg) {
+void CodeGen::emitVar(OrbitCode code, const std::string& arg) {
     auto* instruction = builder_.function()->addInstruction(code);
     instruction->setOperand(builder_.function()->getLocal(arg));
     builder_.function()->finishInstruction();
 }
 
-void CodeGen::emitJump(OrbitCode code, const String& label) {
+void CodeGen::emitJump(OrbitCode code, const std::string& label) {
     auto* instruction = builder_.function()->addInstruction(code);
     instruction->setOperand(label);
     builder_.function()->finishInstruction();
 }
 
 
-void CodeGen::emitString(OrbitCode code, const String& str) {
+void CodeGen::emitString(OrbitCode code, const std::string& str) {
     auto* instruction = builder_.function()->addInstruction(code);
     instruction->setOperand(builder_.addConstant(str));
     builder_.function()->finishInstruction();
@@ -108,6 +108,6 @@ void CodeGen::emit(OrbitCode code) {
     builder_.function()->finishInstruction();
 }
 
-void CodeGen::emitLabel(const String& label) {
+void CodeGen::emitLabel(const std::string& label) {
     builder_.function()->addSymbol(label);
 }

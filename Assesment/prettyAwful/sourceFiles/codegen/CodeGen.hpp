@@ -7,10 +7,11 @@
 //
 #pragma once
 #include <iostream>
-#include "../declVar.hpp"
 #include "ILWriter.hpp"
 #include "ILBuilder.hpp"
 #include "OrbitCode.hpp"
+#include "../declVar.hpp"
+
 
 
 class CodeGen {
@@ -19,15 +20,15 @@ class CodeGen {
     ILBuilder           builder_;
     
     // The next if statement ID. Used to generated unique labels.
-    UInt64              ifID_;
+    std::uint64_t              ifID_;
     
     // The next loop ID. Used to generated unique labels.
-    UInt64              loopID_;
+    std::uint64_t                 loopID_;
     
     // We maintain a stack of if and loop statements so that we can get back
     // to the enclosing IDs/labels when required.
-    vec<UInt64>      ifStack_;
-    vec<UInt64>      loopStack_;
+    vec<std::uint64_t   >      ifStack_;
+    vec<std::uint64_t   >      loopStack_;
     
 public:
     
@@ -53,13 +54,13 @@ public:
     void closeIf();
     
     // Returns the label for the if block of the topmost if statement.
-    str ifLabel();
+    std::string ifLabel();
     
     // Returns the label for the else block of the topmost if statement.
-    str elseLabel();
+    std::string elseLabel();
     
     // Returns the label for the end of the topmost if statement.
-    str endifLabel();
+    std::string endifLabel();
     
     // Starts a loop and pushes its id on the loopstack.
     void startLoop();
@@ -68,29 +69,29 @@ public:
     void closeLoop();
     
     // Returns the label for the start of the topmost loop.
-    str loopLabel();
+    std::string loopLabel();
     
     // Returns the label for the end of the topmost loop.
-    str endLoopLabel();
+    std::string endLoopLabel();
     
     // Emits OrbitIL declaring a local variable.
-    void local(const str& name);
+    void local(const std::string& name);
     
     // Emits an OrbitIL instruction with a number constant argument.
     void emitNum(OrbitCode code, double arg);
     
     // Emits an OrbitIL instruction with a local variable argument.
-    void emitVar(OrbitCode code, const str& arg);
+    void emitVar(OrbitCode code, const std::string& arg);
     
     // Emits an OrbitIL instruction with a jump label argument.
-    void emitJump(OrbitCode code, const str& label);
+    void emitJump(OrbitCode code, const std::string& label);
     
     // Emits an OrbitIL instruction with a string constant argument.
-    void emitString(OrbitCode code, const str& str);
+    void emitString(OrbitCode code, const std::string& str);
     
     // Emits an OrbitIL instruction without argument.
     void emit(OrbitCode code);
     
     // Emits an OrbitIL label.
-    void emitLabel(const str& label);
+    void emitLabel(const std::string& label);
 };

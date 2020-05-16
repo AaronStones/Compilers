@@ -13,13 +13,13 @@ class VariableError : public Error {
     
     /// We store where the variable is declared. This allows us to print a hint
     /// to the user with the actual declaration.
-    RC<Token>    declaration_;
+    rec<lexToke>    declaration_;
     
 public:
     
     /// Creates an error related to the usage of the variable declared at
     /// [varDecl]. The error occurs at [token] and shows [message].
-    VariableError(RC<Token> token, RC<Token> varDecl, const String& message);
+    VariableError(rec<lexToke> token, rec<lexToke> varDecl, const std::string& message);
     
     /// Error destructor
     virtual ~VariableError();

@@ -1,148 +1,177 @@
-//
-//  PALSemantics.cpp - PAL Compiler's token implementation.
-//  PAL Compiler
-//
-//  Created by Amy Parent on 2017-02-25.
-//  Copyright © 2017 Amy Parent. All rights reserved.
-//
 #include <sstream>
 #include "semanticCheck.hpp"
 #include "error/VariableError.hpp"
 #include "error/ExprError.hpp"
 
-String PALSemantics::typeName(PALType type) {
-    switch(type) {
-        case PALType::Integer:
-            return "Integer";
-            break;
-        case PALType::Real:
-            return "Real";
-            break;
-        case PALType::Boolean:
-            return "Boolean";
-            break;
-        default:
-            break;
+std::string semanticAnalysis::valName(compType def) {
+    if (def == compType::boole){
+        return "bool";
     }
-    return "Invalid";
-}
-
-void PALSemantics::declareVariable(RC<Token> var, PALType type) {
-    if(variableExists(var)) {
-        variableError(var, variableDecl(var), "redefinition of '" + var->value() + "'");
-    } else {
-        variables_[var->value()] = {type, var};
+    if (def == compType::inte){
+        return "int";
+    }
+    if (def == compType::real){
+        return "real";
+    }
+    else{
+        return "Invalid";
     }
 }
 
-bool PALSemantics::variableExists(RC<Token> var) {
-    return variables_.find(var->value()) != variables_.end();
+void semanticAnalysis::logAssi(rec<lexToke> x, rec<lexToke> declaration, compType fsg, compType lsg) {
+    std::string errMsg = valName(fsg) + " could not be assigned using '" + valName(lsg) + "' numericals";
+    logVar(x, declaration, errMsg);
 }
 
-PALType PALSemantics::variableType(RC<Token> var) {
-    return variableExists(var) ? variables_.at(var->value()).type : PALType::Invalid;
+void semanticAnalysis::logSem(rec<lexToke> x, const std::string& msg) {
+    auto message = std::make_shared<Error>(x, msg);
+    err.push_back(message);
 }
 
-RC<Token> PALSemantics::variableDecl(RC<Token> var) {
-    if(!variableExists(var)) { return nullptr; }
-    return variables_.at(var->value()).where;
+void semanticAnalysis::logVar(rec<lexToke> x, rec<lexToke> declaration, const std::string& msg) {
+    auto message = std::make_shared<VariableError>(x, declaration, msg);
+    err.push_back(message);
 }
 
-PALType PALSemantics::checkVariable(RC<Token> var) {
-    if(!variableExists(var)) {
-        semanticsError(var, "use of undeclared variable '" + var->value() + "'");
-        return PALType::Invalid;
+void semanticAnalysis::logExpr(rec<lexToke> x, const std::string& division, compType fsg, compType lsg) {
+    auto message = std::make_shared<ExprError>(x, division, valName(fsg), valName(lsg));
+    err.push_back(message);
+}
+
+void semanticAnalysis:: boolCheck(rec<lexToke> x, compType lsg, compType fsg){
+    if(lsg != compType::inv && fsg != compType::inv) {         
+        if(lsg == compType::inv) { 
+            lsg = fsg; 
+        }
+        else if(fsg == compType::inv) { 
+            fsg = lsg; 
+        }
+        else{
+            logExpr(x, "boolean, mismatch", lsg, fsg);
+        }
     }
-    return variables_.at(var->value()).type;
+    else {
+        return;
+    }  
 }
 
-PALType PALSemantics::checkValue(RC<Token> value) {
-    if(value->type() == Token::Integer) {
-        return PALType::Integer;
-    }
-    if(value->type() == Token::Real) {
-        return PALType::Real;
-    }
-    return PALType::Invalid;
-}
-
-PALType PALSemantics::checkExpression(RC<Token> op, PALType lhs, PALType rhs) {
-    // If both members are of invlid type, there is no point reporting any more
-    // errors, they are likely to be bogus anyway.
-    if(lhs == PALType::Invalid && rhs == PALType::Invalid) { return PALType::Invalid; }
-    
-    // If only one member is invalid, try to coerce. This way, we can get past
-    // one error and check if the rest is valid at least.
-    if(lhs == PALType::Invalid) { lhs = rhs; }
-    if(rhs == PALType::Invalid) { rhs = lhs; }
-    
-    // Now that we have valid types on both sides, we can check:
-    if(lhs != rhs) {
-        expressionError(op, "binary", lhs, rhs);
-        return PALType::Invalid;
-    }
-    
-    return lhs;
-}
-
-void PALSemantics::checkBoolean(RC<Token> op, PALType lhs, PALType rhs) {
-    // If both members are of invlid type, there is no point reporting any more
-    // errors, they are likely to be bogus anyway.
-    if(lhs == PALType::Invalid && rhs == PALType::Invalid) { return; }
-    
-    // If only one member is invalid, try to coerce. This way, we can get past
-    // one error and check if the rest is valid at least.
-    if(lhs == PALType::Invalid) { lhs = rhs; }
-    if(rhs == PALType::Invalid) { rhs = lhs; }
-    
-    // Now that we have valid types on both sides, we can check:
-    if(lhs != rhs) {
-        expressionError(op, "boolean", lhs, rhs);
-    }
-}
-
-void PALSemantics::checkAssignment(RC<Token> op, RC<Token> var, PALType rhs) {
-    // check that the variable exists first.
-    if(!variableExists(var)) {
-        semanticsError(var, "use of undeclared variable '" + var->value() + "'");
+void semanticAnalysis::assiCheck(rec<lexToke> x, rec<lexToke> lsg, compType fsg) {
+    bool exists = varExists(lsg);
+    if(exists != true) {
+        std::string errorMessage =  lsg->value() + " is an undeclared data structure";
+        logSem(lsg, errorMessage);
         return;
     }
+
+    else {
+        auto def = declVar(lsg);
+        auto type = typeVar(lsg);
+
+        if(type == compType::inv) { 
+            type = fsg; 
+        }
+        if(fsg == compType::inv) { 
+            fsg = type; 
+        }
+        if(type != fsg) { 
+            logAssi(x, def, type, fsg);
+        }
+        else{
+            return;
+        }
+
+    }
+}
+
+void semanticAnalysis::varDecl(rec<lexToke> x, compType def) {
+    bool exists = varExists(x); //true or false if variable already exists
+    if (exists == false){
+        vars[x->value()] = {def, x}; //define variable
+    }
+    else { //varibale already defined
+    std::string message = "Already defined variable - " + x->value();
+        logVar(x, declVar(x), message);
+    }
+}
+
+bool semanticAnalysis::varExists(rec<lexToke> x) {
+    auto value = vars.find(x->value()) != vars.end();
+    return value;
+}
+
+compType semanticAnalysis::typeVar(rec<lexToke> x) {
+    auto val = varExists(x) ? vars.at(x->value()).subDivision : compType::inv;
+    return val;
+}
+
+rec<lexToke> semanticAnalysis::declVar(rec<lexToke> var) {
+    bool exists = varExists(var);
+    if(exists == false) { 
+        return NULL; 
+    }
+    else {
+        auto answer =  vars.at(var->value()).Location;
+        return answer;
+    }
+}
+
+compType semanticAnalysis::varCheck(rec<lexToke> x) {
+    bool exists = varExists(x);
+
+    if(exists == true) {
+        return vars.at(x->value()).subDivision;
+    }
+    else {
+        std::string message = "The variable '" + x->value() + "' is undefined, please first define it";
+        logSem(x, message);
+        return compType::inv;
+    }
+}
+
+compType semanticAnalysis::valCheck(rec<lexToke> x) {
+    int val = defineType(x);
+    switch(val){
+        case 1:
+            return compType::inte;
+        break;
+        case 2: 
+            return compType::boole;
+        break;
+        default:
+            return compType::inv;
+    }
     
-    // now that we're sure, check we have a good assignment.
-    auto lhs = variableType(var);
-    auto decl = variableDecl(var);
+}
+
+int semanticAnalysis::defineType(rec<lexToke> x){
+    if(x->value() == lexToke::inte) {
+        return 1;
+    }
+    if(x->value() == lexToke::real) {
+        return 2;
+    }
+    else{
+        return 3;
+    }
+}
+
+compType semanticAnalysis::exprCheck(rec<lexToke> x, compType lsg, compType fsg) {
+    if(lsg == compType::inv && fsg == compType::inv) { 
+        return compType::inv; 
+    }
     
-    // If only one member is invalid, try to coerce. This way, we can get past
-    // one error and check if the rest is valid at least.
-    if(lhs == PALType::Invalid) { lhs = rhs; }
-    if(rhs == PALType::Invalid) { rhs = lhs; }
+    if(lsg == fsg) {
+        return lsg;
+    }
+    else {
+        logExpr(x, "binary", lsg, fsg);
+        return compType::inv;
+    }
     
-    if(lhs == rhs) { return; }
-    assignmentError(op, decl, lhs, rhs);
-}
-
-void PALSemantics::semanticsError(RC<Token> opToken, const String& message) {
-    errors_.push_back(std::make_shared<Error>(opToken, message));
 }
 
 
-// Logs a bad variable assignment error.
-void PALSemantics::assignmentError(RC<Token> op, RC<Token> decl,
-                                   PALType lhs, PALType rhs) {
-    std::stringstream buffer;
-    buffer << "assigning '" << typeName(lhs);
-    buffer <<  "' from incompatible type '" << typeName(rhs) << "'";
-    variableError(op, decl, buffer.str());
-}
 
-void PALSemantics::expressionError(RC<Token> op, const String& type,
-                                   PALType lhs, PALType rhs) {
-    errors_.push_back(std::make_shared<ExprError>(op, type,
-                                                  typeName(lhs),
-                                                  typeName(rhs)));
-}
 
-void PALSemantics::variableError(RC<Token> op, RC<Token> decl,
-                                 const String& message) {
-    errors_.push_back(std::make_shared<VariableError>(op, decl, message));
-}
+
+

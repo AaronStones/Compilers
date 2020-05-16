@@ -1,67 +1,44 @@
-//
-//  PALScanner.hpp - PAL Compiler's scanner interface
-//  PAL Compiler
-//
-//  Created by Amy Parent on 2017-02-17.
-//  Copyright © 2017 Amy Parent. All rights reserved.
-//
 #pragma once
 #include <iostream>
-#include "declVar.hpp"
 #include "tokenHandler.hpp"
+#include "declVar.hpp"
 
-class PALScanner {
+
+class scanFile {
     
-    /// The number of the source file line currently being lexed.
-    UInt64          line_;
-    
-    /// The index of the curent char in the current line.
-    UInt64          idx_;
-    
-    /// The input stream used to read the source file.
-    std::istream&   input_;
-    
-    /// The current line being parsed. We use this for better error signaling.
-    str          currentLine_;
-    
-    /// A pointer to the current token.
-    rec<Token>    currentToken_;
-    
-    /// The current character.
-    char            currentChar_;
-    
-    /// States allowed in the FSM. Simpler and safer than ints.
-    enum class State {
-        Whitespace,
-        Identifier,
-        Integer,
-        Real,
-        Punctuation,
-        EndOfFile,
-        InvalidChar,
+    enum class compState {
+        inte,
+        real,
+        punc,
+        ident,
+        white,
+        eof,
+        inv,
     };
+
+    std::uint64_t    lineNum;
+    std::uint64_t    lineIndex;
+    std::istream& inFile;    
+    std::string lineString;
+    rec<lexToke> tokens;
+    char character;
     
 public:
     
-    /// The list of reserved keywords in PAL.
-    static const vec<str> keywords;
+    scanFile(std::istream& fileInput);
+    ~scanFile();
+    void getCharacter();
+    int whiteSpace(char x);
+    static const vec<std::string> hotKeys;
+    int intCheck(char x);
+    int realCheck(char x);
+    const rec<lexToke> getNToken();
     
-    /// Creates a scanner for the file pointed to by [input].
-    PALScanner(std::istream& input);
-    
-    /// Scanner destructor.
-    ~PALScanner();
-    
-    /// Moves the current character forward by one and returns it.
-    void nextChar();
-    
-    /// Lexes the next token in the source and returns.
-    const rec<Token> nextToken();
-    
+
     // MARK: - straight getters.
-    
-    char currentChar() const { return currentChar_; }
-    const rec<Token> currentToken() const { return currentToken_; }
-    UInt64 line() const { return line_; }
-    UInt64 column() const { return idx_ + 1; }
+    char Character() const { return character; }
+    std::uint64_t    currentColumn() const { return lineIndex + 1; }
+    const rec<lexToke> getToken() const { return tokens; } 
+    std::uint64_t    currentLine() const { return lineNum; }
+
 };

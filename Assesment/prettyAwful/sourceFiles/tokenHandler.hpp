@@ -1,64 +1,36 @@
-//
-//  Token.hpp - PAL Compiler's token interface
-//  PAL Compiler
-//
-//  Created by Amy Parent on 2017-02-17.
-//  Copyright © 2017 Amy Parent. All rights reserved.
-//
 #pragma once
 #include <cstring>
 #include <iostream>
-#include "declVar.hpp"
 
-/// The representation of a PAL language token
-class Token {
+class lexToke {
 
-    str      type_;
-    str      value_;
-    UInt64      line_;
-    UInt64      column_;
-    str      sourceLine_;
+    std::string type_;
+    std::string value_;
+    std::uint64_t line_;
+    std::uint64_t column_;
+    std::string sourceLine_;
     
 public:
+    static const std::string ident;
+    static const std::string real;
+    static const std::string eof;
+    static const std::string invT;
+    static const std::string inte;
+    static const std::string invC;
+
+    lexToke(const std::string& type, const std::string& value, std::uint64_t line, std::uint64_t col);
+    lexToke(const std::string& type, std::uint64_t line, std::uint64_t col);
+    ~lexToke();
     
-    // MARK: - Token types
-    
-    static const str Identifier;
-    static const str Real;
-    static const str Integer;
-    static const str EndOfFile;
-    static const str InvalidToken;
-    static const str InvalidChar;
-    
-    // MARK: - Token instance methods
-    
-    /// Create a token with distinct [type] and string [value], starting at
-    /// [line] and [col].
-    Token(const str& type, const str& value, UInt64 line, UInt64 col);
-    
-    /// Create a token that has identical [type] and string value, starting at
-    /// [line] and [col].
-    Token(const str& type, UInt64 line, UInt64 col);
-    
-    /// Token destructor, not much to see here.
-    ~Token();
-    
-    /// Sets the source line string
-    void sourceLine(const str& line) { sourceLine_ = line; }
-    
-    /// Returns whether a token is of [type].
-    bool is(const str& type) const { return type == type_; }
-    
-    /// Returns the double value of the token
+    void sourceLine(const std::string& line) { sourceLine_ = line; }
+    bool is(const std::string& type) const { return type == type_; }
     double doubleValue() const { return std::atof(value_.c_str()); }
-    
-    // MARK: - Straight getters
-    
-    UInt64 line() const { return line_; }
-    UInt64 column() const { return column_; }
-    const str& value() const { return value_; }
-    const str& type() const { return type_; }
-    const str& sourceLine() const { return sourceLine_; }
+        
+    std::uint64_t line() const { return line_; }
+    std::uint64_t column() const { return column_; }
+    const std::string& value() const { return value_; }
+    const std::string& type() const { return type_; }
+    const std::string& sourceLine() const { return sourceLine_; }
 };
 
-std::ostream& operator<<(std::ostream& out, const Token& token);
+std::ostream& operator<<(std::ostream& out, const lexToke& token);

@@ -1,22 +1,14 @@
-//
-//  Token.cpp - PAL Compiler's token implementation
-//  PAL Compiler
-//
-//  Created by Amy Parent on 2017-02-17.
-//  Copyright © 2017 Amy Parent. All rights reserved.
-//
 #include "tokenHandler.hpp"
 
-const String Token::Identifier   = "identifier";
-const String Token::Real         = "real";
-const String Token::Integer      = "integer";
-const String Token::EndOfFile    = "end of file";
-const String Token::InvalidToken = "invalid token";
-const String Token::InvalidChar  = "invalid character";
+const std::string lexToke::ident = "IDENTIFIER";
+const std::string lexToke::real = "REAL";
+const std::string lexToke::inte = "INTEGER";
+const std::string lexToke::eof = "EOF";
+const std::string lexToke::invT = "TOKEN INVALID";
+const std::string lexToke::invC  = "CHARACTER INVALID";
 
-// MARK: - Constructor/Destructor implementation
 
-Token::Token(const String& type, const String& value, UInt64 line, UInt64 col)
+lexToke::lexToke(const std::string& type, const std::string& value, std::uint64_t line, std::uint64_t col)
 : type_(type)
 , value_(value)
 , line_(line)
@@ -24,34 +16,23 @@ Token::Token(const String& type, const String& value, UInt64 line, UInt64 col)
     
 }
 
-Token::Token(const String& type, UInt64 line, UInt64 col)
+lexToke::lexToke(const std::string& type, std::uint64_t line, std::uint64_t col)
 : type_(type)
-, value_(type)
 , line_(line)
 , column_(col) {
     
 }
 
-Token::~Token() {
-    
-}
+lexToke::~lexToke() {}
 
-std::ostream& operator<<(std::ostream& out, const Token& token) {
+std::ostream& operator<<(std::ostream& out, const lexToke& token) {
     out << token.sourceLine();
-#ifdef ERROR_COLORFUL
-    out << BOLDGREEN;
-#endif
-    //Then we display "squigglies" under the problematic token.
-    for(UInt64 i = 0; i < token.column()-1; ++i) {
+    for(std::uint64_t i = 0; i < token.column()-1; ++i) {
         out << " ";
     }
     out << "^";
-    for(UInt64 i = 0; i < token.value().length()-1; ++i) {
+    for(std::uint64_t i = 0; i < token.type().length()-1; ++i) {
         out << "~";
-    }
-#ifdef ERROR_COLORFUL
-    out << RESET;
-#endif
-    
+    }  
     return out;
 }

@@ -1,151 +1,183 @@
-//
-//  PALScanner.cpp - PAL Compiler's scanner implementation
-//  PAL Compiler
-//
-//  Created by Amy Parent on 2017-02-17.
-//  Copyright © 2017 Amy Parent. All rights reserved.
-//
-#include <sstream>
-#include <cctype>
 #include <algorithm>
 #include "scanFile.hpp"
+#include <sstream>
+#include <cctype>
 
-const Vector<String> PALScanner::keywords = {
-	"PROGRAM", "WITH", "IN", "END", "AS", "INTEGER", "REAL", "UNTIL","REPEAT",
-    "ENDLOOP", "IF", "THEN", "ELSE", "ENDIF", "INPUT", "OUTPUT"
+
+scanFile::~scanFile() {
+    
+}
+
+scanFile::scanFile(std::istream& fileInput)
+: lineNum(1), lineIndex(0), inFile(fileInput), tokens(nullptr), character(' ') {}
+
+
+
+const vec<std::string> scanFile::hotKeys = {
+	"PROGRAM", "IN", "WITH", "END", "AS", "INTEGER", "REAL", "REPEAT","UNTIL",
+    "ENDIF", "IF", "ELSE", "THEN", "ENDLOOP", "OUTPUT", "INPUT"
 };
-
-PALScanner::PALScanner(std::istream& input)
-: line_(1)
-, idx_(0)
-, input_(input)
-, currentToken_(nullptr)
-, currentChar_(' ') {
-    
-}
-
-PALScanner::~PALScanner() {
-    
-}
-
-void PALScanner::nextChar() {
-    if(currentChar_ == 25) { return; }
-    
-    idx_ += 1;
-    // If we're not at the end of the line yet:
-    if(idx_ < currentLine_.size()) {
-        currentChar_ = currentLine_[idx_];
-        return;
-    }
-    
-    // If we're at the end, avoid getting a new line
-    if(input_.eof()) {
-        currentChar_ = 25;
-        return;
-    }
-    
-    // We need to get a new line from the source
-    std::getline(input_, currentLine_);
-    line_ += 1;
-    idx_ = 0;
-    currentLine_ += '\n';
-    currentChar_ = currentLine_[0];
-}
-
-const RC<Token> PALScanner::nextToken() {
-    RC<Token> token;
-    
-    std::stringstream buffer;
-    UInt64 startLine = 0, startCol = 0;
-    State lexState = State::Whitespace;
-    
-    while(!token) {
-        switch(lexState) {
-        case State::Whitespace:
-            if(std::isspace(currentChar())) {
-                lexState = State::Whitespace;
-            } 
-            else {
-                startLine = line();
-                startCol = column();
-                
-                if(std::isalpha(currentChar())) {
-                    lexState = State::Identifier;
-                }
-                else if(std::isdigit(currentChar())) {
-                    lexState = State::Integer;
-                }
-                else if(String("+-*/(),=<>").find(currentChar()) != String::npos) {
-                    lexState = State::Punctuation;
-                }
-                else if(currentChar() == 25) {
-                    lexState = State::EndOfFile;
-                }
-                else {
-                    lexState = State::InvalidChar;
-                }
-            }
-            break;
+void scanFile::getCharacter() {
+    if(character != 25) { 
         
-        case State::Identifier:
-            if(std::isalnum(currentChar())) {
-                lexState = State::Identifier;
-            }
-            else {
-                String tok = buffer.str();
-                if(std::find(keywords.begin(), keywords.end(), tok) != keywords.end()) {
-                    token = std::make_shared<Token>(tok, startLine, startCol);
-                }
-                else {
-                    token = std::make_shared<Token>(Token::Identifier, tok,
-                                                       startLine,startCol);
-                }
-            }
-            break;
-            
-        case State::Integer:
-            if(std::isdigit(currentChar())) {
-                lexState = State::Integer;
-            }
-            else if(currentChar() == '.') {
-                lexState = State::Real;
-            }
-            else {
-                token = std::make_shared<Token>(Token::Integer, buffer.str(),
-                                                   startLine, startCol);
-            }
-            break;
-        case State::Real:
-            if(std::isdigit(currentChar())) {
-                lexState = State::Real;
-            }
-            else {
-                token = std::make_shared<Token>(Token::Real, buffer.str(),
-                                                   startLine, startCol);
-            }
-            break;
-            
-        case State::Punctuation:
-            token = std::make_shared<Token>(buffer.str(),
-                                               startLine, startCol);
-            break;
-        case State::EndOfFile:
-            token = std::make_shared<Token>(Token::EndOfFile,
-                                               startLine, startCol);
-            break;
-        case State::InvalidChar:
-            token = std::make_shared<Token>(Token::InvalidToken, buffer.str(),
-                                               startLine, startCol);
-            break;
+        lineIndex++;
+
+        if(lineString.size() > lineIndex) {
+            character = lineString[lineIndex];
+            return;
         }
-        if(!token && lexState != State::Whitespace) {
-                buffer << currentChar();
-            }
-            
-        if (!token){
-            nextChar();
+        
+        if(inFile.eof() != true) {
+            std::getline(inFile, lineString);
+            lineString = lineString + "\n";
+            lineNum++;
+            lineIndex = 0;
+            character = lineString.front();
+
+        }
+        else{
+            character = 25;
+            return;
         }
     }
-    token->sourceLine(currentLine_);
-    return (currentToken_ = token);
 }
+
+const rec<lexToke> scanFile::getNToken() {
+    int Line;
+    int Column;
+    rec<lexToke> errorToken;
+    std::stringstream buffer;
+    compState state = compState::white;
+
+    
+    while(!errorToken) {
+        switch(state) {
+            case compState::white:
+                if(!std::isspace(Character()) == false) {
+                    state = compState::white;
+                } 
+                else {
+                    Line = currentLine();
+                    Column = currentColumn(); 
+                    switch (whiteSpace(Character())){
+                        case 1:
+                            state = compState::ident;
+                            break;
+                        case 2: 
+                            state = compState::inte;
+                            break;
+                        case 3: 
+                            state = compState::punc;
+                            break;
+                        case 4:
+                            state = compState::eof;
+                            break;
+                        case 5: 
+                            state = compState::inv;
+                    }
+                }
+            break;
+            
+            case compState::ident:
+
+                if(!std::isalnum(Character())) {
+                    if(std::find(hotKeys.begin(), hotKeys.end(), buffer.str()) != hotKeys.end()) {
+                        errorToken = std::make_shared<lexToke>(buffer.str(), Line, Column);
+                    }
+                    else {
+                        errorToken = std::make_shared<lexToke>(lexToke::ident, buffer.str(), Line, Column);
+                    }
+                }
+                else {
+                    state = compState::ident;
+                }            
+            break;
+                
+            case compState::inte:
+                switch(intCheck(Character())){
+                    case 1:
+                        state = compState::real;
+                    break;
+                    case 2:
+                        state = compState::inte;
+                    break;
+                    case 3:
+                        errorToken = std::make_shared<lexToke>(lexToke::inte, buffer.str(), Line, Column);
+                    break;
+                }
+            break;
+
+            case compState::real:
+                if (realCheck(Character()) < 1){
+                    errorToken = std::make_shared<lexToke>(lexToke::real, buffer.str(), Line, Column);
+                }
+                else {
+                    state = compState::real;
+                }
+            break;
+            case compState::eof:
+                errorToken = std::make_shared<lexToke>(lexToke::eof, Line, Column);
+            break;
+
+            case compState::inv:
+                errorToken = std::make_shared<lexToke>(lexToke::invT, buffer.str(), Line, Column);
+                break;
+            
+                
+            case compState::punc:
+                errorToken = std::make_shared<lexToke>(buffer.str(), Line, Column);
+            break;
+        }
+
+        if(!errorToken && state != compState::white) {
+            buffer << Character();
+        }
+                
+        if (!errorToken){
+            getCharacter();
+        }
+    }
+    errorToken->sourceLine(lineString);
+    return (tokens = errorToken);
+}
+
+int scanFile::whiteSpace(char x) {
+    if(std::isalpha(x)) {
+        return 1;
+    }
+    else if(std::isdigit(x)) {
+        return 2;
+    }
+    else if(std::string("+-*/(),=<>").find(x) != std::string::npos) {
+        return 3;
+    }
+    else if(x == 25) {
+        return 4;
+    }
+    else {
+        return 5;
+    }
+}
+
+int scanFile::intCheck(char x) {
+    if(x == '.') {
+        return 1;
+    }
+    if(std::isdigit(x) == true) {
+        return 2;
+    }
+    
+    else {
+        return 3;
+    }
+}
+
+int scanFile::realCheck(char x) {
+    if(std::isdigit(x)) {
+        return 1;
+    }
+    else {
+        return 0;
+    }
+}
+

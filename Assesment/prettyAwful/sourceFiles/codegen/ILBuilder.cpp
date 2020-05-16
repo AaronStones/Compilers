@@ -87,7 +87,7 @@ void ILConstant::pack(ILWriter& writer) const {
 // MARK: - Semantics Analysis
 
 #define OPCODE(op, _, effect) {CODE_##op, effect},
-const Map<uint8_t, int8_t> ILInstruction::stackEffects = {
+const mp<uint8_t, int8_t> ILInstruction::stackEffects = {
 #include "orbit_opcodes.h"
 };
 #undef OPCODE
@@ -140,7 +140,7 @@ void ILInstruction::setOperand(uint16_t operand) {
     operand_ = operand;
 }
 
-void ILInstruction::setOperand(const String& label) {
+void ILInstruction::setOperand(const std::string& label) {
     if(operandSize_ != OperandSize::Double) {
         return;
     }
@@ -179,26 +179,26 @@ ILInstruction* ILFunction::addInstruction(OrbitCode opcode) {
     return &byteCode_.back();
 }
 
-void ILFunction::addSymbol(const String& symbol) {
+void ILFunction::addSymbol(const std::string& symbol) {
     if(symbols_.find(symbol) != symbols_.end()) {
         return;
     }
     symbols_[symbol] = insertPoint_;
 }
 
-uint16_t ILFunction::getSymbol(const String& symbol) {
+uint16_t ILFunction::getSymbol(const std::string& symbol) {
     if(symbols_.find(symbol) == symbols_.end()) {
         return 0;
     }
     return symbols_[symbol];
 }
 
-void ILFunction::addParam(const String& param) {
+void ILFunction::addParam(const std::string& param) {
     arity_ += 1;
     addLocal(param);
 }
 
-void ILFunction::addLocal(const String& local) {
+void ILFunction::addLocal(const std::string& local) {
     if(std::find(locals_.begin(), locals_.end(), local) != locals_.end()) {
         return;
     }
@@ -208,7 +208,7 @@ void ILFunction::addLocal(const String& local) {
     locals_.push_back(local);
 }
 
-uint8_t ILFunction::getLocal(const String& local) {
+uint8_t ILFunction::getLocal(const std::string& local) {
     // builder_->semanticsError("unknown label \"" + symbol + "\"");
     auto it = std::find(locals_.begin(), locals_.end(), local);
     if(it == locals_.end()) {
@@ -220,17 +220,17 @@ uint8_t ILFunction::getLocal(const String& local) {
 // MARK: - ILBuilder implementation
 
 #define OPCODE(op, _, __) {#op, CODE_##op },
-const Map<String, OrbitCode> ILBuilder::opCodes_ = {
+const mp<std::string, OrbitCode> ILBuilder::opCodes_ = {
 #include "orbit_opcodes.h"
 };
 #undef OPCODE
 
-OrbitCode ILBuilder::opcode(const String &mnemonic) {
+OrbitCode ILBuilder::opcode(const std::string &mnemonic) {
     return opCodes_.at(mnemonic);
 }
 
 
-ILFunction* ILBuilder::openFunction(const String& signature) {
+ILFunction* ILBuilder::openFunction(const std::string& signature) {
     if(currentFn_ != nullptr) {
         return currentFn_;
     }
@@ -244,7 +244,7 @@ void ILBuilder::closeFunction() {
     currentFn_ = nullptr;
 }
 
-void ILBuilder::addGlobal(const String& global) {
+void ILBuilder::addGlobal(const std::string& global) {
     if(std::find(globals_.begin(), globals_.end(), global) != globals_.end()) {
         return;
     }
@@ -254,7 +254,7 @@ void ILBuilder::addGlobal(const String& global) {
     globals_.push_back(global);
 }
 
-uint16_t ILBuilder::getGlobal(const String& global) {
+uint16_t ILBuilder::getGlobal(const std::string& global) {
     auto it = std::find(globals_.begin(), globals_.end(), global);
     if(it == globals_.end()) {
         return 0;
@@ -262,7 +262,7 @@ uint16_t ILBuilder::getGlobal(const String& global) {
     return it - globals_.begin();
 }
 
-uint16_t ILBuilder::addConstant(String string) {
+uint16_t ILBuilder::addConstant(std::string string) {
     if(constants_.size() > UINT16_MAX) {
         return 0;
     }

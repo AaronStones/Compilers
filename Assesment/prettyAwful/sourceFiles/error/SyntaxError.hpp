@@ -13,7 +13,7 @@ class SyntaxError : public Error {
 public:
     
     /// Creates an error where [token] is not [expected].
-    SyntaxError(rec<Token> token, const str& expected);
+    SyntaxError(rec<lexToke> token, const std::string& expected);
     
     /// Error destructor
     virtual ~SyntaxError();

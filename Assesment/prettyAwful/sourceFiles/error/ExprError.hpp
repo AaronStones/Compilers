@@ -13,8 +13,8 @@ class ExprError : public Error {
 public:
     
     /// Creates an error where [token] is not [expected].
-    ExprError(RC<Token> token, const String& type,
-              const String& lhs, const String& rhs);
+    ExprError(rec<lexToke> token, const std::string& type,
+              const std::string& lhs, const std::string& rhs);
     
     /// Error destructor
     virtual ~ExprError() {}

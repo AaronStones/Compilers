@@ -7,7 +7,7 @@
 //
 #include "SyntaxError.hpp"
 
-SyntaxError::SyntaxError(RC<Token> token, const String& expected)
+SyntaxError::SyntaxError(rec<lexToke> token, const std::string& expected)
 : Error(token, "expected '" + expected + "'")  {
 }
 

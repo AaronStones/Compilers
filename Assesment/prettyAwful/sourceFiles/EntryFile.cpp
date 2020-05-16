@@ -1,6 +1,7 @@
 #include <fstream>
 #include <iostream>
 #include <cstdlib>
+#include <string>
 
 #include "declVar.hpp"
 #include "scanFile.hpp"
@@ -8,9 +9,10 @@
  
 int main(int num, const char** arguments) {
 
+    std::cerr << "mark1";
 
     int usageError(const char** arguments);
-    int exitComp(const str& message); //declare functions
+    int exitComp(const std::string& message); //declare functions
 
 
     if(num != 2) {
@@ -22,17 +24,17 @@ int main(int num, const char** arguments) {
         //file is open do nothing 
     }
     else {
-        return exitComp("file '" + str(arguments[1]) + "' does not exist");
+        return exitComp("file '" + std::string(arguments[1]) + "' does not exist");
     }
 
-    str outfile = "a.omf";
+    std::string outfile = "a.omf";
     
     // initilaise scanner & parser
-    PALScanner scanAna{inputFile};
-    PALParser parseAna{scanAna};
+    scanFile scanAna{inputFile};
+    ParseAnalysis parseAna{scanAna};
     
     if(!parseAna.invoke()) {
-
+        std::cerr << "we have gotten here";
         //begin compiling the code
         
         for(const auto& errList : parseAna.errors()) {
@@ -65,7 +67,7 @@ int usageError(const char** arguments) {
 }
 
 // Prints an error and returns the failure error code.
-int exitComp(const str& message) {
+int exitComp(const std::string& message) {
     std::cerr << "error: " << message << std::endl;
     return EXIT_FAILURE;
 }

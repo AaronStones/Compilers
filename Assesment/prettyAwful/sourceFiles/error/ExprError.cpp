@@ -8,8 +8,8 @@
 #include <sstream>
 #include "ExprError.hpp"
 
-ExprError::ExprError(RC<Token> token, const String& type,
-                     const String& lhs, const String& rhs)
+ExprError::ExprError(rec<lexToke> token, const std::string& type,
+                     const std::string& lhs, const std::string& rhs)
 : Error(token, "") {
     std::stringstream buffer;
     buffer << "invalid operands to " << type << " expression";

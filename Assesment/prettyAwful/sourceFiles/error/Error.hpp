@@ -7,19 +7,20 @@
 //
 #pragma once
 #include <iostream>
-#include "../declVar.hpp"
 #include "../tokenHandler.hpp"
+#include "../declVar.hpp"
+
 
 /// The base representation of a PAL language error.
 class Error {
 protected:
-    rec<Token>    token_;
-    str          message_;
+    rec<lexToke> token_;
+    std::string message_;
     
 public:
     
     /// Creates an error that originates at [token], with [message].
-    Error(rec<Token> token, const str& message);
+    Error(rec<lexToke> token, const std::string& message);
     
     /// Error destructor
     virtual ~Error();
@@ -28,8 +29,8 @@ public:
     
     // MARK: - straight getters
     
-    const rec<Token> token() const { return token_; }
-    const str& message() const { return message_; }
+    const rec<lexToke> token() const { return token_; }
+    const std::string& message() const { return message_; }
 };
 
 /// Comparison function to allow sorting errors at the end of the compiler

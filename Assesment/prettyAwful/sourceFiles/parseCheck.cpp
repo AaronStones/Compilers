@@ -1,25 +1,28 @@
+
 #include <sstream>
 #include <algorithm>
-
 #include "error/SyntaxError.hpp"
 #include "parseCheck.hpp"
 
-PALParser::PALParser(PALScanner& scanner)
+using namespace std;
+
+ParseAnalysis::ParseAnalysis(scanFile& scanner)
 : scanner_(scanner)
-, recovering_(false)
+, rec_(false)
 , semantics_(errors_) {
     
 }
 
-PALParser::~PALParser() {
+ParseAnalysis::~ParseAnalysis() {
     
 }
 
-bool PALParser::invoke() {
-    scanner_.nextToken();
-    recProgram();
-    
-    std::sort(errors_.begin(), errors_.end(), [](const rec<Error>& a, const rec<Error>& b) {
+bool ParseAnalysis::invoke() {
+    scanner_.getNToken();
+    beginProgram();
+    std::cerr << "mark3";
+
+    sort(errors_.begin(), errors_.end(), [](const rec<Error>& a, const rec<Error>& b) {
         return *a < *b;
     });
     return errors_.size() == 0;
@@ -27,94 +30,99 @@ bool PALParser::invoke() {
 
 // MARK: - Recursive Descent utilities
 
-bool PALParser::have(const str& type) const {
-    if(!scanner_.currentToken()){ 
+bool ParseAnalysis::check(const std::string& type) const {
+    if(!scanner_.getToken()){ 
         return false;
     }
     else{
-        return scanner_.currentToken()->is(type);
+        return scanner_.getToken()->is(type);
     }
 }
 
-void PALParser::mustBe(const str& type) {
-    if(recovering_) {
+void ParseAnalysis::assure(const std::string& type) {
+    if(rec_) {
         // If we're in recovery, we keep skipping until we find the token type
         // we wanted, without printing more errors.
-        while(!scanner_.currentToken()->is(type)
-           && !scanner_.currentToken()->is(Token::EndOfFile)) {
+        while(!scanner_.getToken()->is(type)
+           && !scanner_.getToken()->is(lexToke::eof)) {
             
-            scanner_.nextToken();
+            scanner_.getNToken();
         }
-        if(scanner_.currentToken()->is(Token::EndOfFile)) {
+        if(scanner_.getToken()->is(lexToke::eof)) {
             return;
         }
-        scanner_.nextToken();
-        recovering_ = false;
+        scanner_.getNToken();
+        rec_ = false;
     }
     else {
-        if(scanner_.currentToken()->is(type)) {
-            scanner_.nextToken();
+        if(scanner_.getToken()->is(type)) {
+            scanner_.getNToken();
         }
         else {
-            syntaxError(type);
+            synError(type);
         }
     }
 }
 
-void PALParser::syntaxError(const str& expected) {
-    if(recovering_) { 
+void ParseAnalysis::synError(const std::string& expected) {
+    if(rec_) { 
         return; 
     }
-    recovering_ = true;
-    errors_.push_back(std::make_shared<SyntaxError>(scanner_.currentToken(),
-                                                       expected));
+    rec_ = true;
+    errors_.push_back(make_shared<SyntaxError>(scanner_.getToken(), expected));
 }
 
 
-void PALParser::recProgram() {
-    // NOTE: Code Generation code
+void ParseAnalysis::beginProgram() {
+
     codegen_.startProgram();
-    
-    mustBe("PROGRAM");
-    mustBe(Token::Identifier);
-    mustBe("WITH");
-    recVarDecls();
-    mustBe("IN");
-    recStatement();
-    recStatementBlock();
-    mustBe("END");
-    mustBe(Token::EndOfFile);
-    
+
+    assure("PROGRAM");
+    assure(lexToke::ident);
+        std::cerr << "mark1";
+
+    assure("WITH");
+    std::cerr << "mark1";
+
+    variableDecl();
+        std::cerr << "mark1";
+
+    assure("IN");
+    parseStatement();
+    parseStatement2();
+    assure("END");
+    assure(lexToke::eof);
+
     // NOTE: Code Generation code
     codegen_.endProgram();
 }
 
 // <VarDecls> ::= (<IdentList> AS <Type>)* ;
-void PALParser::recVarDecls() {
-    while(have(Token::Identifier)) {
-        auto idents = recIdentList();
-        mustBe("AS");
-        PALType type;
-        if(have("INTEGER")) {
-            mustBe("INTEGER");
-            type = PALType::Integer;
+void ParseAnalysis::variableDecl() {
+    while(check(lexToke::ident)) {
+        auto idents = parseList();
+        assure("AS");
+        compType type;
+        if(check("INTEGER")) {
+            assure("INTEGER");
+            type = compType::inte;
         }
-        else if(have("REAL")) {
-            mustBe("REAL");
-            type = PALType::Real;
+        else if(check("REAL")) {
+            assure("REAL");
+            type = compType::real;
         } 
         else {
-            syntaxError("type name");
+            synError("type name");
             // if the token is an identifier, we need to drop it. Otherwise,
             // there's the while(have(Identifier)) will catch it, and we'll
             // parse it improperly.
-            if(have(Token::Identifier)) {
-                scanner_.nextToken();
+            if(check(lexToke::ident)) {
+                scanner_.getNToken();
             }
         }
         
         for(auto id: idents) {
-            semantics_.declareVariable(id, type);
+            semantics_.varDecl(id, type);
             
             // NOTE: Code Generation code
             codegen_.local(id->value());
@@ -125,63 +133,63 @@ void PALParser::recVarDecls() {
 }
 
 // <IdentList> ::= Identifier ( , Identifier)* ;
-vec<rec<Token>> PALParser::recIdentList() {
-    vec<rec<Token>> idents;
-    idents.push_back(scanner_.currentToken());
-    mustBe(Token::Identifier);
+vec<rec<lexToke>> ParseAnalysis::parseList() {
+    vec<rec<lexToke>> idents;
+    idents.push_back(scanner_.getToken());
+    assure(lexToke::ident);
     
-    while(have(",")) {
-        mustBe(",");
-        idents.push_back(scanner_.currentToken());
-        mustBe(Token::Identifier);
+    while(check(",")) {
+        assure(",");
+        idents.push_back(scanner_.getToken());
+        assure(lexToke::ident);
     }
     return idents;
 }
 
-void PALParser::recStatementBlock() {
-    while(have("IF")
-       || have("UNTIL")
-       || have("INPUT")
-       || have("OUTPUT")
-       || have(Token::Identifier)) {
-        recStatement();
+void ParseAnalysis::parseStatement2() {
+    while(check("IF")
+       || check("UNTIL")
+       || check("INPUT")
+       || check("OUTPUT")
+       || check(lexToke::ident)) {
+        parseStatement();
     }
 }
 
 // <Statement> ::= <Assignment> | <Loop> | <Conditional> | <I-o> ;
-void PALParser::recStatement() {
-    if(have("IF")) {
-        recConditional();
+void ParseAnalysis::parseStatement() {
+    if(check("IF")) {
+        parseIf();
     }
-    else if(have("UNTIL")) {
-        recLoop();
+    else if(check("UNTIL")) {
+        parseLoop();
     }
-    else if(have("INPUT") || have("OUTPUT")) {
-        recIO();
+    else if(check("INPUT") || check("OUTPUT")) {
+        parseInOut();
     }
-    else if(have(Token::Identifier)) {
-        recAssignment();
+    else if(check(lexToke::ident)) {
+        parseAssign();
     } else {
-        syntaxError("statement");
+        synError("statement");
     }
 }
 
 // <Assignment> ::= Identifier = <Expression> ;
-void PALParser::recAssignment() {
+void ParseAnalysis::parseAssign() {
     
-    auto var = scanner_.currentToken();
-    mustBe(Token::Identifier);
+    auto var = scanner_.getToken();
+    assure(lexToke::ident);
     
-    auto op = scanner_.currentToken();
-    bool shouldCheck = have("=");
-    mustBe("=");
+    auto op = scanner_.getToken();
+    bool shouldCheck = check("=");
+    assure("=");
     
-    auto rhs = recExpression();
+    auto rhs = parseExpr();
     
     // Only check if we do have the equals token. Otherwise we're checking
     // something that is not a valid assignmnet
     if(shouldCheck) {
-        semantics_.checkAssignment(op, var, rhs);
+        semantics_.assiCheck(op, var, rhs);
         
         // NOTE: Code Generation code
         codegen_.emitVar(CODE_store_local, var->value());
@@ -189,23 +197,23 @@ void PALParser::recAssignment() {
 }
 
 // <Loop> ::= UNTIL <BooleanExpr> REPEAT (<Statement>)* ENDLOOP ;
-void PALParser::recLoop() {
-    mustBe("UNTIL");
+void ParseAnalysis::parseLoop() {
+    assure("UNTIL");
     
     // NOTE: Code Generation code/ We start the loop (so that we get unique
     //       label IDs) and emit the start label for the future rjump.
     codegen_.startLoop();
     codegen_.emitLabel(codegen_.loopLabel());
     
-    recBooleanExpr();
+    parseBool();
     
     // NOTE: Code Generation code/ conditional loop exit
     codegen_.emitJump(CODE_jump_if, codegen_.endLoopLabel());
     
-    mustBe("REPEAT");
-    recStatementBlock();
+    assure("REPEAT");
+    parseStatement2();
     
-    mustBe("ENDLOOP");
+    assure("ENDLOOP");
     
     // NOTE: Code Generation code/ jump back to the start of the loop
     codegen_.emitJump(CODE_rjump, codegen_.loopLabel());
@@ -215,13 +223,13 @@ void PALParser::recLoop() {
 // <Conditional> ::= IF <BooleanExpr> THEN (<Statement>)*
 //                       ( ELSE (<Statement>)* )?
 //                       ENDIF ;
-void PALParser::recConditional() {
-    mustBe("IF");
+void ParseAnalysis::parseIf() {
+    assure("IF");
     
     // NOTE: Code Generation code/ Start codegen if so we get the proper labels
     codegen_.startIf();
     
-    recBooleanExpr();
+    parseBool();
     
     // NOTE: Code Generation code/ Emit conditional jump to if label, and
     //       otherwise we jump to the else block (if there's none, it'll just
@@ -229,23 +237,23 @@ void PALParser::recConditional() {
     codegen_.emitJump(CODE_jump_if, codegen_.ifLabel());
     codegen_.emitJump(CODE_jump, codegen_.elseLabel());
     
-    mustBe("THEN");
+    assure("THEN");
     
     // NOTE: Code Generation code/ Emit start of the if block label.
     codegen_.emitLabel(codegen_.ifLabel());
     
-    recStatementBlock();
+    parseStatement2();
     
     // NOTE: Code Generation code/ Emit start of the else block label.
     //       we also need to jump to the endif label, otherwise we're going to
     //       run the else block too.
     codegen_.emitJump(CODE_jump, codegen_.endifLabel());
     codegen_.emitLabel(codegen_.elseLabel());
-    if(have("ELSE")) {
-        mustBe("ELSE");
-        recStatementBlock();
+    if(check("ELSE")) {
+        assure("ELSE");
+        parseStatement2();
     }
-    mustBe("ENDIF");
+    assure("ENDIF");
     
     // NOTE: Code Generation code/ Finish if/else block
     codegen_.closeIf();
@@ -253,56 +261,56 @@ void PALParser::recConditional() {
 
 // <I-o> ::= INPUT <IdentList> | 
 //           OUTPUT <Expression> ( , <Expression>)* ;
-void PALParser::recIO() {
-    if(have("INPUT")) {
-        mustBe("INPUT");
-        recIdentList();
+void ParseAnalysis::parseInOut() {
+    if(check("INPUT")) {
+        assure("INPUT");
+        parseList();
         // TODO: call the right input function in orbit
     }
-    else if(have("OUTPUT")) {
+    else if(check("OUTPUT")) {
         // OUTPUT <Expression>
-        mustBe("OUTPUT");
-        recExpression();
+        assure("OUTPUT");
+        parseExpr();
         
         // NOTE: Code Generation code/ call to stdlib print()
         codegen_.emitString(CODE_invoke_sym, "print(Num)");
         
         // ( , <Expression>)* ;
-        while(have(",")) {
-            mustBe(",");
-            recExpression();
+        while(check(",")) {
+            assure(",");
+            parseExpr();
             
             // NOTE: Code Generation code/ call to stdlib print()
             codegen_.emitString(CODE_invoke_sym, "print(Num)");
         }
     } else {
-        syntaxError("IO");
+        synError("IO");
     }
 }
 
 // <Expression> ::= <Term> ( (+|-) <Term>)* ;
-PALType PALParser::recExpression() {
+compType ParseAnalysis::parseExpr() {
     // NOTE: Code Generation code/ Since we have a stack-based vm, we need to
     //       keep the operation and only emit it at the end of the expr.
     OrbitCode operation;
     
-    auto type = recTerm();
+    auto type = parseT();
     // ( (+|-) <Term>)* ;
-    while(have("+") || have("-")) {
-        auto op = scanner_.currentToken();
+    while(check("+") || check("-")) {
+        auto op = scanner_.getToken();
 
         // (+|-)
-        if(have("+")) {
-            mustBe("+");
+        if(check("+")) {
+            assure("+");
             operation = CODE_add;
         }
         else {
-            mustBe("-");
+            assure("-");
             operation = CODE_sub;
         }
         //  <Term> ;
-        auto rhs = recTerm();
-        type = semantics_.checkExpression(op, type, rhs);
+        auto rhs = parseT();
+        type = semantics_.exprCheck(op, type, rhs);
         
         // NOTE: Code Generation code/ finally emit the operation.
         codegen_.emit(operation);
@@ -311,27 +319,27 @@ PALType PALParser::recExpression() {
 }
 
 // <Term> ::= <Factor> ( (*|/) <Factor>)* ;
-PALType PALParser::recTerm() {
+compType ParseAnalysis::parseT() {
     // NOTE: Code Generation code/ Since we have a stack-based vm, we need to
     //       keep the operation and only emit it at the end of the expr.
     OrbitCode operation;
     
-    auto type = recFactor();
-    while(have("*") || have("/")) {
-        auto op = scanner_.currentToken();
+    auto type = parseF();
+    while(check("*") || check("/")) {
+        auto op = scanner_.getToken();
         
         // ( (*|/) <Factor>)* ;
-        if(have("*")) {
-            mustBe("*");
+        if(check("*")) {
+            assure("*");
             operation = CODE_mul;
         }
         else {
-            mustBe("/");
+            assure("/");
             operation = CODE_div;
         }
         // <Factor>
-        auto rhs = recFactor();
-        type = semantics_.checkExpression(op, type, rhs);
+        auto rhs = parseF();
+        type = semantics_.exprCheck(op, type, rhs);
         
         // NOTE: Code Generation code/ finally emit the operation.
         codegen_.emit(operation);
@@ -340,25 +348,25 @@ PALType PALParser::recTerm() {
 }
 
 // <Factor> ::= (+|-)? ( <Value> | "(" <Expression> ")" ) ;
-PALType PALParser::recFactor() {
+compType ParseAnalysis::parseF() {
     bool negate = false;
     
-    if(have("+")) {
-        mustBe("+");
+    if(check("+")) {
+        assure("+");
     }
-    else if(have("-")) {
-        mustBe("-");
+    else if(check("-")) {
+        assure("-");
         negate = true;
     }
     
-    if(have("(")) {
-        mustBe("(");
-        auto type = recExpression();
-        mustBe(")");
+    if(check("(")) {
+        assure("(");
+        auto type = parseExpr();
+        assure(")");
         return type;
     }
     else {
-        return recValue();
+        return parseVal();
     }
     
     // NOTE: Code Generation code/ Factors emit themselves with the different 
@@ -371,65 +379,65 @@ PALType PALParser::recFactor() {
 }
 
 // <Value> ::= Identifier | IntegerValue | RealValue ;
-PALType PALParser::recValue() {
-    auto type = PALType::Invalid;
-    auto token = scanner_.currentToken();
+compType ParseAnalysis::parseVal() {
+    auto type = compType::inv;
+    auto token = scanner_.getToken();
     
-    if(have(Token::Identifier)) {
-        mustBe(Token::Identifier);
-        type = semantics_.checkVariable(token);
+    if(check(lexToke::ident)) {
+        assure(lexToke::ident);
+        type = semantics_.varCheck(token);
         
         // NOTE: Code Generation code/ load the variable on the stack
         codegen_.emitVar(CODE_load_local, token->value());
     }
-    else if(have(Token::Integer)) {
-        mustBe(Token::Integer);
-        type = semantics_.checkValue(token);
+    else if(check(lexToke::inte)) {
+        assure(lexToke::inte);
+        type = semantics_.valCheck(token);
         
         // NOTE: Code Generation code/ load the const number on the stack
         codegen_.emitNum(CODE_load_const, token->doubleValue());
     }
-    else if(have(Token::Real)) {
-        mustBe(Token::Real);
-        type = semantics_.checkValue(token);
+    else if(check(lexToke::real)) {
+        assure(lexToke::real);
+        type = semantics_.valCheck(token);
         
         // NOTE: Code Generation code/ load the const number on the stack
         codegen_.emitNum(CODE_load_const, token->doubleValue());
     }
     else {
-        syntaxError("value");
+        synError("value");
     }
     return type;
 }
 
 // <BooleanExpr> ::= <Expression> ("<" | "=" | ">") <Expression> ;
-void PALParser::recBooleanExpr() {
+void ParseAnalysis::parseBool() {
     // NOTE: Code Generation code/ Since we have a stack-based vm, we need to
     //       keep the operation and only emit it at the end of the expr.
     OrbitCode operation;
     
-    auto lhs = recExpression();
-    auto op = scanner_.currentToken();
+    auto lhs = parseExpr();
+    auto op = scanner_.getToken();
     
-    if(have("<")) {
-        mustBe("<");
+    if(check("<")) {
+        assure("<");
         operation = CODE_test_lt;
     }
-    else if(have(">")) {
-        mustBe(">");
+    else if(check(">")) {
+        assure(">");
         operation = CODE_test_gt;
     }
-    else if(have("=")) {
-        mustBe("=");
+    else if(check("=")) {
+        assure("=");
         operation = CODE_test_eq;
     }
     else {
-        syntaxError("boolean expression");
+        synError("boolean expression");
         return;
     }
     
-    auto rhs = recExpression();
-    semantics_.checkBoolean(op, lhs, rhs);
+    auto rhs = parseExpr();
+    semantics_.boolCheck(op, lhs, rhs);
     
     // NOTE: Code Generation code/ finally emit the operation.
     codegen_.emit(operation);
