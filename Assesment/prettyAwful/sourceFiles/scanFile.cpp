@@ -137,7 +137,7 @@ const rec<lexToke> scanFile::getNToken() {
             getCharacter();
         }
     }
-    errorToken->sourceLine(lineString);
+    errorToken->fileSource(lineString);
     return (tokens = errorToken);
 }
 

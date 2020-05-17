@@ -20,9 +20,8 @@ ParseAnalysis::~ParseAnalysis() {
 bool ParseAnalysis::invoke() {
     scanner_.getNToken();
     beginProgram();
-    std::cerr << "mark3";
 
-    sort(errors_.begin(), errors_.end(), [](const rec<Error>& a, const rec<Error>& b) {
+    sort(errors_.begin(), errors_.end(), [](const rec<reportErr>& a, const rec<reportErr>& b) {
         return *a < *b;
     });
     return errors_.size() == 0;
@@ -35,7 +34,7 @@ bool ParseAnalysis::check(const std::string& type) const {
         return false;
     }
     else{
-        return scanner_.getToken()->is(type);
+        return scanner_.getToken()->complete(type);
     }
 }
 
@@ -43,19 +42,19 @@ void ParseAnalysis::assure(const std::string& type) {
     if(rec_) {
         // If we're in recovery, we keep skipping until we find the token type
         // we wanted, without printing more errors.
-        while(!scanner_.getToken()->is(type)
-           && !scanner_.getToken()->is(lexToke::eof)) {
+        while(!scanner_.getToken()->complete(type)
+           && !scanner_.getToken()->complete(lexToke::eof)) {
             
             scanner_.getNToken();
         }
-        if(scanner_.getToken()->is(lexToke::eof)) {
+        if(scanner_.getToken()->complete(lexToke::eof)) {
             return;
         }
         scanner_.getNToken();
         rec_ = false;
     }
     else {
-        if(scanner_.getToken()->is(type)) {
+        if(scanner_.getToken()->complete(type)) {
             scanner_.getNToken();
         }
         else {
@@ -79,14 +78,8 @@ void ParseAnalysis::beginProgram() {
 
     assure("PROGRAM");
     assure(lexToke::ident);
-        std::cerr << "mark1";
-
     assure("WITH");
-    std::cerr << "mark1";
-
     variableDecl();
-        std::cerr << "mark1";
-
     assure("IN");
     parseStatement();
     parseStatement2();
@@ -125,9 +118,9 @@ void ParseAnalysis::variableDecl() {
             semantics_.varDecl(id, type);
             
             // NOTE: Code Generation code
-            codegen_.local(id->value());
+            codegen_.local(id->getDef());
             codegen_.emitNum(CODE_load_const, 0.0);
-            codegen_.emitVar(CODE_store_local, id->value());
+            codegen_.emitVar(CODE_store_local, id->getDef());
         }
     }
 }
@@ -192,7 +185,7 @@ void ParseAnalysis::parseAssign() {
         semantics_.assiCheck(op, var, rhs);
         
         // NOTE: Code Generation code
-        codegen_.emitVar(CODE_store_local, var->value());
+        codegen_.emitVar(CODE_store_local, var->getDef());
     }
 }
 
@@ -388,7 +381,7 @@ compType ParseAnalysis::parseVal() {
         type = semantics_.varCheck(token);
         
         // NOTE: Code Generation code/ load the variable on the stack
-        codegen_.emitVar(CODE_load_local, token->value());
+        codegen_.emitVar(CODE_load_local, token->getDef());
     }
     else if(check(lexToke::inte)) {
         assure(lexToke::inte);

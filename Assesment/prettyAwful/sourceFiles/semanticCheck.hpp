@@ -26,12 +26,12 @@ class semanticAnalysis {
 
     mp<std::string, decl> vars;
 
-    vec<rec<Error>>& err;
+    vec<rec<reportErr>>& err;
 
     
 public:
     
-    semanticAnalysis(vec<rec<Error>>& errors) : err(errors) {}
+    semanticAnalysis(vec<rec<reportErr>>& errors) : err(errors) {}
     ~semanticAnalysis() {}
 
     void boolCheck(rec<lexToke> x, compType lsg, compType fsg);

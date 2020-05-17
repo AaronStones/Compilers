@@ -8,8 +8,8 @@
 #include "VariableError.hpp"
 
 VariableError::VariableError(rec<lexToke> token, rec<lexToke> varDecl, const std::string& message)
-: Error(token, message)
-, declaration_(varDecl) {
+: reportErr(token, message)
+, userDecl(varDecl) {
 }
 
 VariableError::~VariableError() {
@@ -17,26 +17,19 @@ VariableError::~VariableError() {
 }
 
 void VariableError::print(std::ostream& out) const {
-    Error::print(out);
+
+    reportErr::print(out);
     
-    auto where = declaration_;
+    std::uint64_t line = userDecl->getLineNum();
+    std::uint64_t col = userDecl->getColNum();
+    bool complete = userDecl->complete(lexToke::eof);
     
-    // Once we've printed the error message, print the declaration context.
-    out << std::endl;
-#ifdef ERROR_COLORFUL
-    out << RESET;
-#endif
-    out << where->line() << ":" << where->column() << ": ";
-#ifdef ERROR_COLORFUL
-    out << BOLDMAGENTA;
-#endif
-    out << "note: ";
-#ifdef ERROR_COLORFUL
-    out << RESET;
-#endif
-    out << "variable '" << where->value() << "' was declared here";
-    
-    if(!where->is(lexToke::eof)) {
-        out << std::endl << *where;
+    std::string val = "\n" + std::to_string(line) + ": " + std::to_string(col) 
+    + ": note: variable '" + userDecl->getContains() 
+    + "' was declared here";
+
+    if (complete != true){
+        val = val + "\n";
+        out << val << *userDecl;
     }
 }

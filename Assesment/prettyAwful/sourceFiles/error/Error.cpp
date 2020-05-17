@@ -1,42 +1,38 @@
-//
-//  Error.cpp - PAL Compiler's error implementation
-//  PAL Compiler
-//
-//  Created by Amy Parent on 2017-02-17.
-//  Copyright © 2017 Amy Parent. All rights reserved.
-//
 #include "Error.hpp"
 
-Error::Error(rec<lexToke> token, const std::string& message)
-: token_(token)
-, message_(message) {
-    
-}
+reportErr::reportErr(rec<lexToke> token, const std::string& message): lexTokenV(token), msgV(message) {}
 
-Error::~Error() {
-    
-}
+reportErr::~reportErr() {}
 
-/// Here we compare by line first (an error on line 1 will always come before
-/// an error on line 10), and only compare columns for errors on the same line.
-int compare(const Error& lhs, const Error& rhs) {
-    if(lhs.token()->line() == rhs.token()->line()) {
-        return lhs.token()->column() - rhs.token()->column();
+int compare(const reportErr& rsg, const reportErr& lsg) {
+    
+    uint64_t lineLsg, lineRhs, columnLsg, columnRhs;
+
+    columnLsg = rsg.getlexToken()->getColNum();
+    columnRhs = lsg.getlexToken()->getColNum();
+
+    lineLsg = rsg.getlexToken()->getLineNum();
+    lineRhs = lsg.getlexToken()->getLineNum();
+    
+    if(lineLsg == lineRhs) {
+        uint64_t val = columnLsg - columnRhs;
+        return val;
     }
-    return lhs.token()->line() - rhs.token()->line();
+    else {
+        uint64_t val = lineLsg - lineRhs;
+        return val;
+    }
 }
 
-/// Basic error printing. No context printing at the moment, just line/column
-/// and error message.
-void Error::print(std::ostream& out) const {
-    
-    out << token()->line() << ":" << token()->column() << ": ";
+void reportErr::print(std::ostream& cmdOut) const {    
+    std::int64_t lineNumber = getlexToken()->getLineNum();
+    std::int64_t columnNumber = getlexToken()->getColNum();
+    std::string message = std::to_string(lineNumber) + ":" + std::to_string(columnNumber) + ": there is an issue" + getMsg();
 
-    out << "error: ";
+    bool complete = getlexToken()->complete(lexToke::eof);
 
-    out << message();
-
-    if(!token()->is(lexToke::eof)) {
-        out << std::endl << *token();
+    if(complete == false) {
+        message += "\n";
+        cmdOut << message << *getlexToken();
     }
 }

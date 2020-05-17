@@ -15,7 +15,7 @@ class ParseAnalysis {
     scanFile& scanner_;
 
     bool rec_; 
-    vec<rec<Error>> errors_;
+    vec<rec<reportErr>> errors_;
     
     semanticAnalysis semantics_; 
     CodeGen codegen_;
@@ -53,5 +53,5 @@ public:
     bool invoke();
     CodeGen generator() const { return codegen_; }
     bool isRecovering() const { return rec_; }
-    const vec<rec<Error>>& errors() const { return errors_; }
+    const vec<rec<reportErr>>& errors() const { return errors_; }
 };

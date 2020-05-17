@@ -4,27 +4,27 @@
 #include "error/ExprError.hpp"
 
 std::string semanticAnalysis::valName(compType def) {
-    if (def == compType::boole){
-        return "bool";
+    if (compType::real == def){
+        return "REAL";
     }
-    if (def == compType::inte){
-        return "int";
+    if (compType::inte == def){
+        return "INTEGER";
     }
-    if (def == compType::real){
-        return "real";
-    }
-    else{
-        return "Invalid";
+    if (compType::boole == def){
+        return "BOOLEAN";
+    } 
+    else {
+        return "INVALID";
     }
 }
 
 void semanticAnalysis::logAssi(rec<lexToke> x, rec<lexToke> declaration, compType fsg, compType lsg) {
-    std::string errMsg = valName(fsg) + " could not be assigned using '" + valName(lsg) + "' numericals";
+    std::string errMsg = valName(fsg) + " could not be assigned using " + valName(lsg) + " numericals";
     logVar(x, declaration, errMsg);
 }
 
 void semanticAnalysis::logSem(rec<lexToke> x, const std::string& msg) {
-    auto message = std::make_shared<Error>(x, msg);
+    auto message = std::make_shared<reportErr>(x, msg);
     err.push_back(message);
 }
 
@@ -58,7 +58,7 @@ void semanticAnalysis:: boolCheck(rec<lexToke> x, compType lsg, compType fsg){
 void semanticAnalysis::assiCheck(rec<lexToke> x, rec<lexToke> lsg, compType fsg) {
     bool exists = varExists(lsg);
     if(exists != true) {
-        std::string errorMessage =  lsg->value() + " is an undeclared data structure";
+        std::string errorMessage =  lsg->getContains() + " is an undeclared data structure";
         logSem(lsg, errorMessage);
         return;
     }
@@ -86,21 +86,21 @@ void semanticAnalysis::assiCheck(rec<lexToke> x, rec<lexToke> lsg, compType fsg)
 void semanticAnalysis::varDecl(rec<lexToke> x, compType def) {
     bool exists = varExists(x); //true or false if variable already exists
     if (exists == false){
-        vars[x->value()] = {def, x}; //define variable
+        vars[x->getContains()] = {def, x}; //define variable
     }
     else { //varibale already defined
-    std::string message = "Already defined variable - " + x->value();
+    std::string message = "Already defined variable - " + x->getContains();
         logVar(x, declVar(x), message);
     }
 }
 
 bool semanticAnalysis::varExists(rec<lexToke> x) {
-    auto value = vars.find(x->value()) != vars.end();
+    auto value = vars.find(x->getContains()) != vars.end();
     return value;
 }
 
 compType semanticAnalysis::typeVar(rec<lexToke> x) {
-    auto val = varExists(x) ? vars.at(x->value()).subDivision : compType::inv;
+    auto val = varExists(x) ? vars.at(x->getContains()).subDivision : compType::inv;
     return val;
 }
 
@@ -110,7 +110,7 @@ rec<lexToke> semanticAnalysis::declVar(rec<lexToke> var) {
         return NULL; 
     }
     else {
-        auto answer =  vars.at(var->value()).Location;
+        auto answer =  vars.at(var->getContains()).Location;
         return answer;
     }
 }
@@ -119,10 +119,10 @@ compType semanticAnalysis::varCheck(rec<lexToke> x) {
     bool exists = varExists(x);
 
     if(exists == true) {
-        return vars.at(x->value()).subDivision;
+        return vars.at(x->getContains()).subDivision;
     }
     else {
-        std::string message = "The variable '" + x->value() + "' is undefined, please first define it";
+        std::string message = "The variable '" + x->getContains() + "' is undefined, please first define it";
         logSem(x, message);
         return compType::inv;
     }
@@ -144,10 +144,10 @@ compType semanticAnalysis::valCheck(rec<lexToke> x) {
 }
 
 int semanticAnalysis::defineType(rec<lexToke> x){
-    if(x->value() == lexToke::inte) {
+    if(x->getContains() == lexToke::inte) {
         return 1;
     }
-    if(x->value() == lexToke::real) {
+    if(x->getContains() == lexToke::real) {
         return 2;
     }
     else{
@@ -156,17 +156,16 @@ int semanticAnalysis::defineType(rec<lexToke> x){
 }
 
 compType semanticAnalysis::exprCheck(rec<lexToke> x, compType lsg, compType fsg) {
-    if(lsg == compType::inv && fsg == compType::inv) { 
-        return compType::inv; 
-    }
-    
-    if(lsg == fsg) {
-        return lsg;
-    }
-    else {
+    if(lsg == compType::inv && fsg == compType::inv) {return compType::inv;}   
+    if(lsg == compType::inv) { lsg = fsg; }
+    if(fsg == compType::inv) { fsg = lsg; }
+    if(lsg != fsg) {
         logExpr(x, "binary", lsg, fsg);
         return compType::inv;
     }
+        
+    return lsg;
+
     
 }
 

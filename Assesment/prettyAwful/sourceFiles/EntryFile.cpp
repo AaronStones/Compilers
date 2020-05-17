@@ -8,9 +8,6 @@
 #include "parseCheck.hpp"
  
 int main(int num, const char** arguments) {
-
-    std::cerr << "mark1";
-
     int usageError(const char** arguments);
     int exitComp(const std::string& message); //declare functions
 
@@ -34,7 +31,6 @@ int main(int num, const char** arguments) {
     ParseAnalysis parseAna{scanAna};
     
     if(!parseAna.invoke()) {
-        std::cerr << "we have gotten here";
         //begin compiling the code
         
         for(const auto& errList : parseAna.errors()) {

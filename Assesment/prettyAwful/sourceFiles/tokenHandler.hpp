@@ -4,33 +4,62 @@
 
 class lexToke {
 
-    std::string type_;
-    std::string value_;
-    std::uint64_t line_;
-    std::uint64_t column_;
-    std::string sourceLine_;
+    std::string      def;
+    std::string      contains;
+    std::uint64_t    lineNumber;
+    std::uint64_t    columnNumber;
+    std::string      inputSource;
+    
     
 public:
-    static const std::string ident;
-    static const std::string real;
-    static const std::string eof;
-    static const std::string invT;
-    static const std::string inte;
-    static const std::string invC;
-
-    lexToke(const std::string& type, const std::string& value, std::uint64_t line, std::uint64_t col);
-    lexToke(const std::string& type, std::uint64_t line, std::uint64_t col);
+    lexToke(const std::string& def, const std::string& contains, std::uint64_t lineNumber, std::uint64_t columnNumber);
+    lexToke(const std::string& def, std::uint64_t lineNumber, std::uint64_t columnNumber);
     ~lexToke();
+
+    static const std::string eof, inte, ident, invT, real, invC;
+
+
+    const std::string& getSource() const { 
+        return inputSource; 
+    }
     
-    void sourceLine(const std::string& line) { sourceLine_ = line; }
-    bool is(const std::string& type) const { return type == type_; }
-    double doubleValue() const { return std::atof(value_.c_str()); }
-        
-    std::uint64_t line() const { return line_; }
-    std::uint64_t column() const { return column_; }
-    const std::string& value() const { return value_; }
-    const std::string& type() const { return type_; }
-    const std::string& sourceLine() const { return sourceLine_; }
+    void fileSource(const std::string& lineNum) { 
+        inputSource = lineNum; 
+    }
+
+    std::uint64_t getLineNum() const { 
+        return lineNumber; 
+    }
+
+    std::uint64_t getColNum() const { 
+        return columnNumber; 
+    }
+
+    bool complete(const std::string& definition) const { 
+        if (definition != def){
+            return false;
+        }
+        else {
+            return true;
+        }
+    }
+    
+    double doubleValue() const { 
+        auto contain = contains.c_str();
+        auto containment = std::atof(contain);
+        return containment; 
+    }
+
+    const std::string& getContains() const { 
+        return contains; 
+    }
+
+    const std::string& getDef() const { 
+        return def; 
+    }
+
+
+
 };
 
 std::ostream& operator<<(std::ostream& out, const lexToke& token);

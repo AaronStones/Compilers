@@ -1,19 +1,10 @@
-//
-//  VariableError.hpp - PAL Compiler's variable-related error type
-//  PAL Compiler
-//
-//  Created by Amy Parent on 2017-02-17.
-//  Copyright © 2017 Amy Parent. All rights reserved.
-//
 #pragma once
 #include "Error.hpp"
 
-/// Representation of a syntax error
-class VariableError : public Error {
+
+class VariableError : public reportErr {
     
-    /// We store where the variable is declared. This allows us to print a hint
-    /// to the user with the actual declaration.
-    rec<lexToke>    declaration_;
+    rec<lexToke>    userDecl;
     
 public:
     

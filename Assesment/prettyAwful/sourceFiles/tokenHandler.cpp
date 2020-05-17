@@ -2,37 +2,35 @@
 
 const std::string lexToke::ident = "IDENTIFIER";
 const std::string lexToke::real = "REAL";
+const std::string lexToke::invT = "TOKEN INVALID";
 const std::string lexToke::inte = "INTEGER";
 const std::string lexToke::eof = "EOF";
-const std::string lexToke::invT = "TOKEN INVALID";
 const std::string lexToke::invC  = "CHARACTER INVALID";
 
 
-lexToke::lexToke(const std::string& type, const std::string& value, std::uint64_t line, std::uint64_t col)
-: type_(type)
-, value_(value)
-, line_(line)
-, column_(col) {
-    
-}
+lexToke::lexToke(const std::string& def_, const std::string& contains_, std::uint64_t lineNumber_, std::uint64_t columnNumber_)
+: def(def_)
+, contains(contains_)
+, lineNumber(lineNumber_)
+, columnNumber(columnNumber_) {}
 
-lexToke::lexToke(const std::string& type, std::uint64_t line, std::uint64_t col)
-: type_(type)
-, line_(line)
-, column_(col) {
-    
-}
+lexToke::lexToke(const std::string& def_, std::uint64_t lineNumber_, std::uint64_t columnNumber_)
+: def(def_)
+, contains(def_)
+, lineNumber(lineNumber_)
+, columnNumber(columnNumber_) {}
 
 lexToke::~lexToke() {}
 
-std::ostream& operator<<(std::ostream& out, const lexToke& token) {
-    out << token.sourceLine();
-    for(std::uint64_t i = 0; i < token.column()-1; ++i) {
-        out << " ";
+
+std::ostream& operator<<(std::ostream& cmdOut, const lexToke& lex) {
+    std::string output = lex.getSource();
+
+    for(std::uint64_t i = 0; i < lex.getColNum()-1; ++i) {
+        output += " ";
     }
-    out << "^";
-    for(std::uint64_t i = 0; i < token.type().length()-1; ++i) {
-        out << "~";
-    }  
-    return out;
+    output += "*";
+    return cmdOut << output;
 }
+
+
