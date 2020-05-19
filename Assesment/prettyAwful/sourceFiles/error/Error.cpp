@@ -1,5 +1,6 @@
 #include "Error.hpp"
 
+
 reportErr::reportErr(rec<lexToke> token, const std::string& message): lexTokenV(token), msgV(message) {}
 
 reportErr::~reportErr() {}

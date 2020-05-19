@@ -30,7 +30,7 @@ int main(int num, const char** arguments) {
     scanFile scanAna{inputFile};
     ParseAnalysis parseAna{scanAna};
     
-    if(!parseAna.invoke()) {
+    if(!parseAna.beginAnalysis()) {
         //begin compiling the code
         
         for(const auto& errList : parseAna.errors()) {
@@ -50,7 +50,7 @@ int main(int num, const char** arguments) {
         if(!out.is_open()) {
             return exitComp("cannot open '" + outfile + "' for reading");
         }
-        parseAna.generator().writeModule(out);
+        parseAna.generator().modConstr(out);
     }
 }
 

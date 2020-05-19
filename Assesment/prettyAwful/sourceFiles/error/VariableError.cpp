@@ -1,16 +1,6 @@
-//
-//  PALConflictError.cpp - PAL Compiler's variable-related error type
-//  PAL Compiler
-//
-//  Created by Amy Parent on 2017-02-17.
-//  Copyright © 2017 Amy Parent. All rights reserved.
-//
 #include "VariableError.hpp"
 
-VariableError::VariableError(rec<lexToke> token, rec<lexToke> varDecl, const std::string& message)
-: reportErr(token, message)
-, userDecl(varDecl) {
-}
+VariableError::VariableError(rec<lexToke> token, rec<lexToke> varDecl, const std::string& message): reportErr(token, message), userDecl(varDecl) {}
 
 VariableError::~VariableError() {
     

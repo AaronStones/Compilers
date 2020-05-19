@@ -1,10 +1,3 @@
-//
-//  ILBuilder.hpp
-//  orbitasm
-//
-//  Created by Cesar Parent on 07/02/2017.
-//  Copyright © 2017 cesarparent. All rights reserved.
-//
 #pragma once
 #include <cstdint>
 #include "OrbitCode.hpp"

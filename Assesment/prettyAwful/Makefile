@@ -1,4 +1,4 @@
-TARGET		:= compiler
+TARGET		:= ./compiler
 
 # Compiler flags. Optmised for debugging, not speed
 CPPFLAGS	:= -pedantic -Wall -Wextra -Werror -g -ggdb -O0 -std=c++11
@@ -6,20 +6,17 @@ LDFLAGS		:=  #-static-libgcc -static-libstdc++ -lgcc_eh
 
 # Required directories for building
 SOURCE_DIR	:= ./sourceFiles
-TESTS_DIR	:= ./testFiles
 PRODUCT_DIR	:= ./
-OBJECTS_DIR	:= ./buildFiles
+OBJECTS_DIR	:= ./compFiles
 INSTALL_DIR	:= /usr/local/bin
 
 # Simple project, we only scan one directory (no subdirectory)
 SOURCES		:= $(wildcard $(SOURCE_DIR)/*.cpp) $(wildcard $(SOURCE_DIR)/*/*.cpp)
 OBJECTS		:= $(patsubst $(SOURCE_DIR)/%.cpp, $(OBJECTS_DIR)/%.o, $(SOURCES))
-PALS		:= $(wildcard $(TESTS_DIR)/*/*.txt) $(wildcard $(TESTS_DIR)/*/*/*.txt)
 
 .PHONY: clean tests
 all: $(TARGET)
 
-tests: $(PALS)
 	
 install: $(TARGET)
 	@echo "[installing product $(TARGET)]"
@@ -36,9 +33,6 @@ $(OBJECTS_DIR)/%.o: $(SOURCE_DIR)/%.cpp
 	@echo "[compiling $(notdir $<)]"
 	@$(CXX) $(CPPFLAGS) -c $< -o $@
 	
-$(TESTS_DIR)/%.txt: $(TARGET) FORCE
-	@echo "[testing with \`$@\`]"
-	@$(PRODUCT_DIR)/$(TARGET) $@ /dev/null
 
 # Create the build products directory
 $(PRODUCT_DIR):

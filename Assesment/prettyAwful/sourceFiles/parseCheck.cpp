@@ -4,12 +4,11 @@
 #include "error/SyntaxError.hpp"
 #include "parseCheck.hpp"
 
-using namespace std;
 
 ParseAnalysis::ParseAnalysis(scanFile& scanner)
-: scanner_(scanner)
+: getTokens(scanner)
 , rec_(false)
-, semantics_(errors_) {
+, checkChar(err) {
     
 }
 
@@ -17,24 +16,27 @@ ParseAnalysis::~ParseAnalysis() {
     
 }
 
-bool ParseAnalysis::invoke() {
-    scanner_.getNToken();
-    beginProgram();
-
-    sort(errors_.begin(), errors_.end(), [](const rec<reportErr>& a, const rec<reportErr>& b) {
+bool ParseAnalysis::beginAnalysis() {
+    start();
+    sort(err.begin(), err.end(), [](const rec<reportErr>& a, const rec<reportErr>& b) {
         return *a < *b;
     });
-    return errors_.size() == 0;
+    return err.size() == 0;
+}
+
+void ParseAnalysis::start() {
+    getTokens.getNToken();
+    beginProgram();
 }
 
 // MARK: - Recursive Descent utilities
 
 bool ParseAnalysis::check(const std::string& type) const {
-    if(!scanner_.getToken()){ 
+    if(!getTokens.getToken()){ 
         return false;
     }
     else{
-        return scanner_.getToken()->complete(type);
+        return getTokens.getToken()->complete(type);
     }
 }
 
@@ -42,20 +44,20 @@ void ParseAnalysis::assure(const std::string& type) {
     if(rec_) {
         // If we're in recovery, we keep skipping until we find the token type
         // we wanted, without printing more errors.
-        while(!scanner_.getToken()->complete(type)
-           && !scanner_.getToken()->complete(lexToke::eof)) {
+        while(!getTokens.getToken()->complete(type)
+           && !getTokens.getToken()->complete(lexToke::eof)) {
             
-            scanner_.getNToken();
+            getTokens.getNToken();
         }
-        if(scanner_.getToken()->complete(lexToke::eof)) {
+        if(getTokens.getToken()->complete(lexToke::eof)) {
             return;
         }
-        scanner_.getNToken();
+        getTokens.getNToken();
         rec_ = false;
     }
     else {
-        if(scanner_.getToken()->complete(type)) {
-            scanner_.getNToken();
+        if(getTokens.getToken()->complete(type)) {
+            getTokens.getNToken();
         }
         else {
             synError(type);
@@ -68,13 +70,13 @@ void ParseAnalysis::synError(const std::string& expected) {
         return; 
     }
     rec_ = true;
-    errors_.push_back(make_shared<SyntaxError>(scanner_.getToken(), expected));
+    err.push_back(std::make_shared<SyntaxError>(getTokens.getToken(), expected));
 }
 
 
 void ParseAnalysis::beginProgram() {
 
-    codegen_.startProgram();
+    gen.beginAnalysis();
 
     assure("PROGRAM");
     assure(lexToke::ident);
@@ -87,7 +89,7 @@ void ParseAnalysis::beginProgram() {
     assure(lexToke::eof);
 
     // NOTE: Code Generation code
-    codegen_.endProgram();
+    gen.finishAnalysis();
 }
 
 // <VarDecls> ::= (<IdentList> AS <Type>)* ;
@@ -110,17 +112,17 @@ void ParseAnalysis::variableDecl() {
             // there's the while(have(Identifier)) will catch it, and we'll
             // parse it improperly.
             if(check(lexToke::ident)) {
-                scanner_.getNToken();
+                getTokens.getNToken();
             }
         }
         
         for(auto id: idents) {
-            semantics_.varDecl(id, type);
+            checkChar.varDecl(id, type);
             
             // NOTE: Code Generation code
-            codegen_.local(id->getDef());
-            codegen_.emitNum(CODE_load_const, 0.0);
-            codegen_.emitVar(CODE_store_local, id->getDef());
+            gen.divisional(id->getDef());
+            gen.NumberConst(CODE_load_const, 0.0);
+            gen.VarConst(CODE_store_local, id->getDef());
         }
     }
 }
@@ -128,12 +130,12 @@ void ParseAnalysis::variableDecl() {
 // <IdentList> ::= Identifier ( , Identifier)* ;
 vec<rec<lexToke>> ParseAnalysis::parseList() {
     vec<rec<lexToke>> idents;
-    idents.push_back(scanner_.getToken());
+    idents.push_back(getTokens.getToken());
     assure(lexToke::ident);
     
     while(check(",")) {
         assure(",");
-        idents.push_back(scanner_.getToken());
+        idents.push_back(getTokens.getToken());
         assure(lexToke::ident);
     }
     return idents;
@@ -170,10 +172,10 @@ void ParseAnalysis::parseStatement() {
 // <Assignment> ::= Identifier = <Expression> ;
 void ParseAnalysis::parseAssign() {
     
-    auto var = scanner_.getToken();
+    auto var = getTokens.getToken();
     assure(lexToke::ident);
     
-    auto op = scanner_.getToken();
+    auto op = getTokens.getToken();
     bool shouldCheck = check("=");
     assure("=");
     
@@ -182,10 +184,10 @@ void ParseAnalysis::parseAssign() {
     // Only check if we do have the equals token. Otherwise we're checking
     // something that is not a valid assignmnet
     if(shouldCheck) {
-        semantics_.assiCheck(op, var, rhs);
+        checkChar.assiCheck(op, var, rhs);
         
         // NOTE: Code Generation code
-        codegen_.emitVar(CODE_store_local, var->getDef());
+        gen.VarConst(CODE_store_local, var->getDef());
     }
 }
 
@@ -195,13 +197,13 @@ void ParseAnalysis::parseLoop() {
     
     // NOTE: Code Generation code/ We start the loop (so that we get unique
     //       label IDs) and emit the start label for the future rjump.
-    codegen_.startLoop();
-    codegen_.emitLabel(codegen_.loopLabel());
+    gen.loopBegin();
+    gen.LabConstr(gen.markerloop());
     
     parseBool();
     
     // NOTE: Code Generation code/ conditional loop exit
-    codegen_.emitJump(CODE_jump_if, codegen_.endLoopLabel());
+    gen.LabArg(CODE_jump_if, gen.markerEndLoop());
     
     assure("REPEAT");
     parseStatement2();
@@ -209,8 +211,8 @@ void ParseAnalysis::parseLoop() {
     assure("ENDLOOP");
     
     // NOTE: Code Generation code/ jump back to the start of the loop
-    codegen_.emitJump(CODE_rjump, codegen_.loopLabel());
-    codegen_.closeLoop();
+    gen.LabArg(CODE_rjump, gen.markerloop());
+    gen.loopFinish();
 }
 
 // <Conditional> ::= IF <BooleanExpr> THEN (<Statement>)*
@@ -220,28 +222,28 @@ void ParseAnalysis::parseIf() {
     assure("IF");
     
     // NOTE: Code Generation code/ Start codegen if so we get the proper labels
-    codegen_.startIf();
+    gen.ifFinish();
     
     parseBool();
     
     // NOTE: Code Generation code/ Emit conditional jump to if label, and
     //       otherwise we jump to the else block (if there's none, it'll just
     //       go past the label).
-    codegen_.emitJump(CODE_jump_if, codegen_.ifLabel());
-    codegen_.emitJump(CODE_jump, codegen_.elseLabel());
+    gen.LabArg(CODE_jump_if, gen.markerIf());
+    gen.LabArg(CODE_jump, gen.markerElse());
     
     assure("THEN");
     
     // NOTE: Code Generation code/ Emit start of the if block label.
-    codegen_.emitLabel(codegen_.ifLabel());
+    gen.LabConstr(gen.markerIf());
     
     parseStatement2();
     
     // NOTE: Code Generation code/ Emit start of the else block label.
     //       we also need to jump to the endif label, otherwise we're going to
     //       run the else block too.
-    codegen_.emitJump(CODE_jump, codegen_.endifLabel());
-    codegen_.emitLabel(codegen_.elseLabel());
+    gen.LabArg(CODE_jump, gen.markerEndIf());
+    gen.LabConstr(gen.markerElse());
     if(check("ELSE")) {
         assure("ELSE");
         parseStatement2();
@@ -249,7 +251,7 @@ void ParseAnalysis::parseIf() {
     assure("ENDIF");
     
     // NOTE: Code Generation code/ Finish if/else block
-    codegen_.closeIf();
+    gen.ifBegin();
 }
 
 // <I-o> ::= INPUT <IdentList> | 
@@ -266,7 +268,7 @@ void ParseAnalysis::parseInOut() {
         parseExpr();
         
         // NOTE: Code Generation code/ call to stdlib print()
-        codegen_.emitString(CODE_invoke_sym, "print(Num)");
+        gen.StrConst(CODE_invoke_sym, "print(Num)");
         
         // ( , <Expression>)* ;
         while(check(",")) {
@@ -274,7 +276,7 @@ void ParseAnalysis::parseInOut() {
             parseExpr();
             
             // NOTE: Code Generation code/ call to stdlib print()
-            codegen_.emitString(CODE_invoke_sym, "print(Num)");
+            gen.StrConst(CODE_invoke_sym, "print(Num)");
         }
     } else {
         synError("IO");
@@ -290,7 +292,7 @@ compType ParseAnalysis::parseExpr() {
     auto type = parseT();
     // ( (+|-) <Term>)* ;
     while(check("+") || check("-")) {
-        auto op = scanner_.getToken();
+        auto op = getTokens.getToken();
 
         // (+|-)
         if(check("+")) {
@@ -303,10 +305,10 @@ compType ParseAnalysis::parseExpr() {
         }
         //  <Term> ;
         auto rhs = parseT();
-        type = semantics_.exprCheck(op, type, rhs);
+        type = checkChar.exprCheck(op, type, rhs);
         
         // NOTE: Code Generation code/ finally emit the operation.
-        codegen_.emit(operation);
+        gen.withOArg(operation);
     }
     return type;
 }
@@ -319,7 +321,7 @@ compType ParseAnalysis::parseT() {
     
     auto type = parseF();
     while(check("*") || check("/")) {
-        auto op = scanner_.getToken();
+        auto op = getTokens.getToken();
         
         // ( (*|/) <Factor>)* ;
         if(check("*")) {
@@ -332,10 +334,10 @@ compType ParseAnalysis::parseT() {
         }
         // <Factor>
         auto rhs = parseF();
-        type = semantics_.exprCheck(op, type, rhs);
+        type = checkChar.exprCheck(op, type, rhs);
         
         // NOTE: Code Generation code/ finally emit the operation.
-        codegen_.emit(operation);
+        gen.withOArg(operation);
     }
     return type;
 }
@@ -366,36 +368,36 @@ compType ParseAnalysis::parseF() {
     //       recognisers, but if we have a leading '-' then we need to negate 
     //       the resulting top of the stack.
     if(negate) {
-        codegen_.emitNum(CODE_load_const, -1.0);
-        codegen_.emit(CODE_mul);
+        gen.NumberConst(CODE_load_const, -1.0);
+        gen.withOArg(CODE_mul);
     }
 }
 
 // <Value> ::= Identifier | IntegerValue | RealValue ;
 compType ParseAnalysis::parseVal() {
     auto type = compType::inv;
-    auto token = scanner_.getToken();
+    auto token = getTokens.getToken();
     
     if(check(lexToke::ident)) {
         assure(lexToke::ident);
-        type = semantics_.varCheck(token);
+        type = checkChar.varCheck(token);
         
         // NOTE: Code Generation code/ load the variable on the stack
-        codegen_.emitVar(CODE_load_local, token->getDef());
+        gen.VarConst(CODE_load_local, token->getDef());
     }
     else if(check(lexToke::inte)) {
         assure(lexToke::inte);
-        type = semantics_.valCheck(token);
+        type = checkChar.valCheck(token);
         
         // NOTE: Code Generation code/ load the const number on the stack
-        codegen_.emitNum(CODE_load_const, token->doubleValue());
+        gen.NumberConst(CODE_load_const, token->doubleValue());
     }
     else if(check(lexToke::real)) {
         assure(lexToke::real);
-        type = semantics_.valCheck(token);
+        type = checkChar.valCheck(token);
         
         // NOTE: Code Generation code/ load the const number on the stack
-        codegen_.emitNum(CODE_load_const, token->doubleValue());
+        gen.NumberConst(CODE_load_const, token->doubleValue());
     }
     else {
         synError("value");
@@ -410,7 +412,7 @@ void ParseAnalysis::parseBool() {
     OrbitCode operation;
     
     auto lhs = parseExpr();
-    auto op = scanner_.getToken();
+    auto op = getTokens.getToken();
     
     if(check("<")) {
         assure("<");
@@ -430,8 +432,8 @@ void ParseAnalysis::parseBool() {
     }
     
     auto rhs = parseExpr();
-    semantics_.boolCheck(op, lhs, rhs);
+    checkChar.boolCheck(op, lhs, rhs);
     
     // NOTE: Code Generation code/ finally emit the operation.
-    codegen_.emit(operation);
+    gen.withOArg(operation);
 }
