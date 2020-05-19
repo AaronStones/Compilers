@@ -43,8 +43,7 @@ void scanFile::getCharacter() {
 }
 
 const rec<lexToke> scanFile::getNToken() {
-    int Line;
-    int Column;
+    int Line, Column;
     rec<lexToke> errorToken;
     std::stringstream buffer;
     compState state = compState::white;

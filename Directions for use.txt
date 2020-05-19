@@ -1,0 +1,33 @@
+
+-first you must run git pull - unsure why the repo seems to have issues involved with it
+-if this doesn't work the github location is - https://github.com/AaronStones/Compilers.git
+
+FOR LINUX BASED OS
+-this system has been designed to operate with a Linux based OS
+-to run the code navigate to the prettyAwful directory this will have the makefile in it
+-type make into the command line
+-if there are any issues it is usually because of a gcc error
+	-sudo apt-get update
+	-sudo apt install yum
+	-sudo apt update
+	-sudo apt install gcc - or update
+	-sudo apt-get install build essential
+	-this should fix the error
+
+-the code will run when you use ./compiler <FILENAME>
+
+FOR WINDOWS BASED OS
+-there are a few more hoops to jump through for this 
+
+-I would highly recommend installing ubuntu from the microsoft store - it installs 
+	a linux shell on top of windows
+-create a linux account with this - you will need to enable wsl on windows
+-sudo apt-get update
+-sudo apt install yum
+-sudo apt update
+-sudo apt install gcc - or update
+-sudo apt-get install build essential
+-this should fix the error
+
+-navigate to the prettyAwful directory and run make 
+-the code will run when you use ./compiler <FILENAME>

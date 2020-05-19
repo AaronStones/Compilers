@@ -50,7 +50,7 @@ int main(int num, const char** arguments) {
         if(!out.is_open()) {
             return exitComp("cannot open '" + outfile + "' for reading");
         }
-        parseAna.generator().modConstr(out);
+        parseAna.generator().writeModule(out);
     }
 }
 

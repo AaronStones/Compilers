@@ -34,8 +34,7 @@ public:
     semanticAnalysis(vec<rec<reportErr>>& errors) : err(errors) {}
     ~semanticAnalysis() {}
 
-    void boolCheck(rec<lexToke> x, compType lsg, compType fsg);
-    void assiCheck(rec<lexToke> x, rec<lexToke> lsg, compType fsg);
+    void boolCheck(rec<lexToke> x, compType lsg, compType fsg), assiCheck(rec<lexToke> x, rec<lexToke> lsg, compType fsg);
     void varDecl(rec<lexToke> x, compType def);
     
     bool varExists(rec<lexToke> x);

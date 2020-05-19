@@ -21,12 +21,13 @@ bool ParseAnalysis::beginAnalysis() {
     sort(err.begin(), err.end(), [](const rec<reportErr>& a, const rec<reportErr>& b) {
         return *a < *b;
     });
-    return err.size() == 0;
+    return false;
 }
 
 void ParseAnalysis::start() {
-    getTokens.getNToken();
-    beginProgram();
+        getTokens.getNToken();
+        beginProgram();
+    
 }
 
 // MARK: - Recursive Descent utilities
@@ -76,8 +77,7 @@ void ParseAnalysis::synError(const std::string& expected) {
 
 void ParseAnalysis::beginProgram() {
 
-    gen.beginAnalysis();
-
+    gen.startProgram();
     assure("PROGRAM");
     assure(lexToke::ident);
     assure("WITH");
@@ -87,9 +87,8 @@ void ParseAnalysis::beginProgram() {
     parseStatement2();
     assure("END");
     assure(lexToke::eof);
-
     // NOTE: Code Generation code
-    gen.finishAnalysis();
+    gen.endProgram();
 }
 
 // <VarDecls> ::= (<IdentList> AS <Type>)* ;
@@ -120,9 +119,9 @@ void ParseAnalysis::variableDecl() {
             checkChar.varDecl(id, type);
             
             // NOTE: Code Generation code
-            gen.divisional(id->getDef());
-            gen.NumberConst(CODE_load_const, 0.0);
-            gen.VarConst(CODE_store_local, id->getDef());
+            gen.local(id->getDef());
+            gen.emitNum(CODE_load_const, 0.0);
+            gen.emitVar(CODE_store_local, id->getDef());
         }
     }
 }
@@ -147,7 +146,7 @@ void ParseAnalysis::parseStatement2() {
        || check("INPUT")
        || check("OUTPUT")
        || check(lexToke::ident)) {
-        parseStatement();
+            parseStatement();
     }
 }
 
@@ -155,17 +154,22 @@ void ParseAnalysis::parseStatement2() {
 void ParseAnalysis::parseStatement() {
     if(check("IF")) {
         parseIf();
+
     }
     else if(check("UNTIL")) {
         parseLoop();
+
     }
     else if(check("INPUT") || check("OUTPUT")) {
         parseInOut();
+
     }
     else if(check(lexToke::ident)) {
         parseAssign();
+
     } else {
         synError("statement");
+
     }
 }
 
@@ -187,7 +191,7 @@ void ParseAnalysis::parseAssign() {
         checkChar.assiCheck(op, var, rhs);
         
         // NOTE: Code Generation code
-        gen.VarConst(CODE_store_local, var->getDef());
+        gen.emitVar(CODE_store_local, var->getDef());
     }
 }
 
@@ -197,13 +201,11 @@ void ParseAnalysis::parseLoop() {
     
     // NOTE: Code Generation code/ We start the loop (so that we get unique
     //       label IDs) and emit the start label for the future rjump.
-    gen.loopBegin();
-    gen.LabConstr(gen.markerloop());
-    
+    gen.startLoop();
+    gen.emitLabel(gen.loopLabel());
     parseBool();
-    
     // NOTE: Code Generation code/ conditional loop exit
-    gen.LabArg(CODE_jump_if, gen.markerEndLoop());
+    gen.emitJump(CODE_jump_if, gen.loopLabel());
     
     assure("REPEAT");
     parseStatement2();
@@ -211,8 +213,8 @@ void ParseAnalysis::parseLoop() {
     assure("ENDLOOP");
     
     // NOTE: Code Generation code/ jump back to the start of the loop
-    gen.LabArg(CODE_rjump, gen.markerloop());
-    gen.loopFinish();
+    gen.emitJump(CODE_rjump, gen.loopLabel());
+    gen.closeLoop();
 }
 
 // <Conditional> ::= IF <BooleanExpr> THEN (<Statement>)*
@@ -222,28 +224,28 @@ void ParseAnalysis::parseIf() {
     assure("IF");
     
     // NOTE: Code Generation code/ Start codegen if so we get the proper labels
-    gen.ifFinish();
+    gen.startIf();
     
     parseBool();
     
     // NOTE: Code Generation code/ Emit conditional jump to if label, and
     //       otherwise we jump to the else block (if there's none, it'll just
     //       go past the label).
-    gen.LabArg(CODE_jump_if, gen.markerIf());
-    gen.LabArg(CODE_jump, gen.markerElse());
+    gen.emitJump(CODE_jump_if, gen.ifLabel());
+    gen.emitJump(CODE_jump, gen.elseLabel());
     
     assure("THEN");
     
     // NOTE: Code Generation code/ Emit start of the if block label.
-    gen.LabConstr(gen.markerIf());
+    gen.emitLabel(gen.ifLabel());
     
     parseStatement2();
     
     // NOTE: Code Generation code/ Emit start of the else block label.
     //       we also need to jump to the endif label, otherwise we're going to
     //       run the else block too.
-    gen.LabArg(CODE_jump, gen.markerEndIf());
-    gen.LabConstr(gen.markerElse());
+    gen.emitJump(CODE_jump, gen.endifLabel());
+    gen.emitLabel(gen.elseLabel());
     if(check("ELSE")) {
         assure("ELSE");
         parseStatement2();
@@ -251,7 +253,7 @@ void ParseAnalysis::parseIf() {
     assure("ENDIF");
     
     // NOTE: Code Generation code/ Finish if/else block
-    gen.ifBegin();
+    gen.closeIf();
 }
 
 // <I-o> ::= INPUT <IdentList> | 
@@ -268,7 +270,7 @@ void ParseAnalysis::parseInOut() {
         parseExpr();
         
         // NOTE: Code Generation code/ call to stdlib print()
-        gen.StrConst(CODE_invoke_sym, "print(Num)");
+        gen.emitString(CODE_invoke_sym, "print(Num)");
         
         // ( , <Expression>)* ;
         while(check(",")) {
@@ -276,7 +278,7 @@ void ParseAnalysis::parseInOut() {
             parseExpr();
             
             // NOTE: Code Generation code/ call to stdlib print()
-            gen.StrConst(CODE_invoke_sym, "print(Num)");
+            gen.emitString(CODE_invoke_sym, "print(Num)");
         }
     } else {
         synError("IO");
@@ -308,7 +310,7 @@ compType ParseAnalysis::parseExpr() {
         type = checkChar.exprCheck(op, type, rhs);
         
         // NOTE: Code Generation code/ finally emit the operation.
-        gen.withOArg(operation);
+        gen.emit(operation);
     }
     return type;
 }
@@ -337,7 +339,7 @@ compType ParseAnalysis::parseT() {
         type = checkChar.exprCheck(op, type, rhs);
         
         // NOTE: Code Generation code/ finally emit the operation.
-        gen.withOArg(operation);
+        gen.emit(operation);
     }
     return type;
 }
@@ -368,8 +370,8 @@ compType ParseAnalysis::parseF() {
     //       recognisers, but if we have a leading '-' then we need to negate 
     //       the resulting top of the stack.
     if(negate) {
-        gen.NumberConst(CODE_load_const, -1.0);
-        gen.withOArg(CODE_mul);
+        gen.emitNum(CODE_load_const, -1.0);
+        gen.emit(CODE_mul);
     }
 }
 
@@ -383,21 +385,21 @@ compType ParseAnalysis::parseVal() {
         type = checkChar.varCheck(token);
         
         // NOTE: Code Generation code/ load the variable on the stack
-        gen.VarConst(CODE_load_local, token->getDef());
+        gen.emitVar(CODE_load_local, token->getDef());
     }
     else if(check(lexToke::inte)) {
         assure(lexToke::inte);
         type = checkChar.valCheck(token);
         
         // NOTE: Code Generation code/ load the const number on the stack
-        gen.NumberConst(CODE_load_const, token->doubleValue());
+        gen.emitNum(CODE_load_const, token->doubleValue());
     }
     else if(check(lexToke::real)) {
         assure(lexToke::real);
         type = checkChar.valCheck(token);
         
         // NOTE: Code Generation code/ load the const number on the stack
-        gen.NumberConst(CODE_load_const, token->doubleValue());
+        gen.emitNum(CODE_load_const, token->doubleValue());
     }
     else {
         synError("value");
@@ -435,5 +437,5 @@ void ParseAnalysis::parseBool() {
     checkChar.boolCheck(op, lhs, rhs);
     
     // NOTE: Code Generation code/ finally emit the operation.
-    gen.withOArg(operation);
+    gen.emit(operation);
 }

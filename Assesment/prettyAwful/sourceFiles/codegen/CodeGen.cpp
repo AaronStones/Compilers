@@ -1,136 +1,113 @@
+//
+//  CodeGen.cpp - Orbit IL code generator
+//  PAL Compiler
+//
+//  Created by Amy Parent on 2017-02-17.
+//  Copyright © 2017 Amy Parent. All rights reserved.
+//
 #include "CodeGen.hpp"
+
+
+// And here we have the code -> mnemonic conversion table. This uses the
+// x-macro too.
 #define OPCODE(x, _, __) #x,
-static const std::string mnemonics[] = { 
-    #include "orbit_opcodes.h"
+static const std::string mnemonics[] = {
+#include "orbit_opcodes.h"
 };
 #undef OPCODE
 
-generateAnalysis::generateAnalysis() : loopStatement(0), ifStatement(0) {}
-
-generateAnalysis::~generateAnalysis() {}
-
-std::string generateAnalysis::markerIf() {
-    return createRet("if_" , ifS);
+CodeGen::CodeGen()
+    : ifID_(0), loopID_(0) {
 }
 
-std::string generateAnalysis::markerElse() {
-    return createRet("else_" , ifS);
-}
-
-std::string generateAnalysis::markerEndIf() {
-    return createRet("endif" , ifS);
-}
-
-std::string generateAnalysis::markerloop() {
-    return createRet("loop_" , ifS);
-}
-
-std::string generateAnalysis::markerEndLoop() {
-    return createRet("endloop_" , ifS);
-}
-
-void generateAnalysis::ifBegin() {
-    ifS[ifS.size()+1] = loopStatement++;
-}
-
-void generateAnalysis::ifFinish() {
-    classBuild.function()->addSymbol(markerEndIf());
-    ifS.pop_back();
-}
-
-void generateAnalysis::beginAnalysis() {
-    classBuild.openFunction("main");
-}
-
-void generateAnalysis::loopBegin() {
-    loop[loop.size()+1] = loopStatement++;
-}
-
-void generateAnalysis::loopFinish() {
-    classBuild.function()->addSymbol(markerEndLoop());
-    loop.pop_back();
-}
-
-void generateAnalysis::finishAnalysis() {
-    classBuild.closeFunction();
-}
-
-std::string generateAnalysis::createRet(std::string start, vec<u_int64_t> value){
-    start += std::to_string(value[value.size()]);
-    return start;
-}
-
-void generateAnalysis::Construct(OrbitCode written, const std::string argsPass, std::string type) {
-    auto* instruction = classBuild.function()->addInstruction(written);
-    if (type != "" && argsPass != ""){
-        if (type == "Var"){
-            instruction->setOperand(classBuild.function()->getLocal(argsPass));
-        }
-        if (type == "Lab"){
-            instruction->setOperand(argsPass);
-        }
-        if (type == "Str"){
-            instruction->setOperand(classBuild.addConstant(argsPass));
-        }
-    }
+CodeGen::~CodeGen() {
     
-    classBuild.function()->finishInstruction();
 }
 
-void generateAnalysis::divisional(const std::string& Variable) {
-    classBuild.function()->addLocal(Variable);
+void CodeGen::writeModule(std::ostream& out) const {
+    out << builder_;
+}
+
+void CodeGen::startProgram() {
+    builder_.openFunction("main");
+}
+
+void CodeGen::endProgram() {
+    builder_.closeFunction();
+}
+
+void CodeGen::startIf() {
+    ifStack_.push_back(ifID_++);
+}
+
+void CodeGen::closeIf() {
+    builder_.function()->addSymbol(endifLabel());
+    ifStack_.pop_back();
+}
+
+std::string  CodeGen::ifLabel() {
+    return std::string ("if_") + std::to_string(ifStack_.back());
+}
+
+std::string  CodeGen::elseLabel() {
+    return std::string ("else_") + std::to_string(ifStack_.back());
+}
+
+std::string  CodeGen::endifLabel() {
+    return std::string ("endif_") + std::to_string(ifStack_.back());
+}
+
+void CodeGen::startLoop() {
+    loopStack_.push_back(loopID_++);
+}
+
+void CodeGen::closeLoop() {
+    builder_.function()->addSymbol(endLoopLabel());
+    loopStack_.pop_back();
+}
+
+std::string  CodeGen::loopLabel() {
+    return std::string ("loop_") + std::to_string(loopStack_.back());
+}
+
+std::string  CodeGen::endLoopLabel() {
+    return std::string ("endloop_") + std::to_string(loopStack_.back());
+}
+
+void CodeGen::local(const std::string & name) {
+    builder_.function()->addLocal(name);
+}
+
+void CodeGen::emitNum(OrbitCode code, double arg) {
+    auto* instruction = builder_.function()->addInstruction(code);
+    instruction->setOperand(builder_.addConstant(arg));
+    builder_.function()->finishInstruction();
+}
+
+void CodeGen::emitVar(OrbitCode code, const std::string & arg) {
+    auto* instruction = builder_.function()->addInstruction(code);
+    instruction->setOperand(builder_.function()->getLocal(arg));
+    builder_.function()->finishInstruction();
+}
+
+void CodeGen::emitJump(OrbitCode code, const std::string & label) {
+    auto* instruction = builder_.function()->addInstruction(code);
+    instruction->setOperand(label);
+    builder_.function()->finishInstruction();
 }
 
 
-
-void generateAnalysis::NumberConst(OrbitCode written, double argsPass) {
-    auto* instruction = classBuild.function()->addInstruction(written);
-    instruction->setOperand(classBuild.addConstant(argsPass));
-    classBuild.function()->finishInstruction();
+void CodeGen::emitString(OrbitCode code, const std::string & str) {
+    auto* instruction = builder_.function()->addInstruction(code);
+    instruction->setOperand(builder_.addConstant(str));
+    builder_.function()->finishInstruction();
 }
 
-void generateAnalysis::VarConst(OrbitCode written, const std::string& argsPass) {
-    Construct(written, argsPass, "Var");
+void CodeGen::emit(OrbitCode code) {
+    builder_.function()->addInstruction(code);
+    builder_.function()->finishInstruction();
 }
 
-void generateAnalysis::LabArg(OrbitCode written, const std::string& argsPass) {
-    Construct(written, argsPass, "Lab");
+void CodeGen::emitLabel(const std::string & label) {
+    builder_.function()->addSymbol(label);
 }
-
-
-void generateAnalysis::StrConst(OrbitCode written, const std::string& argsPass) {
-    Construct(written, argsPass, "Str");
-}
-
-void generateAnalysis::withOArg(OrbitCode written) {
-    Construct(written, "", "");
-}
-
-void generateAnalysis::modConstr(std::ostream& cmd) const {
-    cmd << classBuild;
-}
-
-void generateAnalysis::LabConstr(const std::string& type) {
-    classBuild.function()->addSymbol(type);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

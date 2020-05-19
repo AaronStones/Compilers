@@ -35,7 +35,6 @@ public:
     const rec<lexToke> getNToken();
     
 
-    // MARK: - straight getters.
     char Character() const { return character; }
     std::uint64_t    currentColumn() const { return lineIndex + 1; }
     const rec<lexToke> getToken() const { return tokens; } 

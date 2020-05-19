@@ -89,7 +89,7 @@ void semanticAnalysis::varDecl(rec<lexToke> x, compType def) {
         vars[x->getContains()] = {def, x}; //define variable
     }
     else { //varibale already defined
-    std::string message = "Already defined variable - " + x->getContains();
+        std::string message = "Already defined variable - " + x->getContains();
         logVar(x, declVar(x), message);
     }
 }
@@ -163,14 +163,5 @@ compType semanticAnalysis::exprCheck(rec<lexToke> x, compType lsg, compType fsg)
         logExpr(x, "binary", lsg, fsg);
         return compType::inv;
     }
-        
     return lsg;
-
-    
 }
-
-
-
-
-
-
