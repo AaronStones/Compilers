@@ -1,113 +1,122 @@
-//
-//  CodeGen.cpp - Orbit IL code generator
-//  PAL Compiler
-//
-//  Created by Amy Parent on 2017-02-17.
-//  Copyright © 2017 Amy Parent. All rights reserved.
-//
+//Name - Aaron Stones
+//Module Code - CMP409
+//Date - 12/04/2020
 #include "CodeGen.hpp"
 
-
-// And here we have the code -> mnemonic conversion table. This uses the
-// x-macro too.
 #define OPCODE(x, _, __) #x,
 static const std::string mnemonics[] = {
 #include "orbit_opcodes.h"
 };
 #undef OPCODE
 
-CodeGen::CodeGen()
-    : ifID_(0), loopID_(0) {
+generation::generation()
+    : ifD(0), loopD(0) {
 }
 
-CodeGen::~CodeGen() {
-    
+generation::~generation() {}
+
+void generation::startMod(std::ostream& out) const {
+    out << build;
 }
 
-void CodeGen::writeModule(std::ostream& out) const {
-    out << builder_;
+void generation::startProgram() {
+    build.openFunction("main");
 }
 
-void CodeGen::startProgram() {
-    builder_.openFunction("main");
+void generation::endProgram() {
+    build.closeFunction();
 }
 
-void CodeGen::endProgram() {
-    builder_.closeFunction();
+void generation::startIf() {
+    ifNum.push_back(ifD++);
 }
 
-void CodeGen::startIf() {
-    ifStack_.push_back(ifID_++);
+void generation::closeIf() {
+    build.function()->addSymbol(endifLabel());
+    ifNum.pop_back();
 }
 
-void CodeGen::closeIf() {
-    builder_.function()->addSymbol(endifLabel());
-    ifStack_.pop_back();
+std::string generation::stringMake(std::string var, std::string type){ //my own code 
+    if (type == "if"){
+        return var + std::to_string(ifNum.back());
+    }
+    else {
+        return var + std::to_string(loopNum.back());
+    }
 }
 
-std::string  CodeGen::ifLabel() {
-    return std::string ("if_") + std::to_string(ifStack_.back());
+std::string  generation::ifLabel() {//my own code 
+    return stringMake("if_", "if");
 }
 
-std::string  CodeGen::elseLabel() {
-    return std::string ("else_") + std::to_string(ifStack_.back());
+std::string  generation::elseLabel() {//my own code 
+    return stringMake("else_", "if");
 }
 
-std::string  CodeGen::endifLabel() {
-    return std::string ("endif_") + std::to_string(ifStack_.back());
+std::string  generation::endifLabel() {//my own code 
+    return stringMake("endif_", "if");
 }
 
-void CodeGen::startLoop() {
-    loopStack_.push_back(loopID_++);
+void generation::startLoop() {//my own code 
+    loopNum.push_back(loopD++);
 }
 
-void CodeGen::closeLoop() {
-    builder_.function()->addSymbol(endLoopLabel());
-    loopStack_.pop_back();
+void generation::closeLoop() {//my own code 
+    build.function()->addSymbol(endLoopLabel());
+    loopNum.pop_back();
 }
 
-std::string  CodeGen::loopLabel() {
-    return std::string ("loop_") + std::to_string(loopStack_.back());
+std::string  generation::loopLabel() {//my own code 
+    return stringMake("loop_", "loop");
+
 }
 
-std::string  CodeGen::endLoopLabel() {
-    return std::string ("endloop_") + std::to_string(loopStack_.back());
+std::string  generation::endLoopLabel() {//my own code 
+    return stringMake("endloop_", "loop");
 }
 
-void CodeGen::local(const std::string & name) {
-    builder_.function()->addLocal(name);
+void generation::homeFunc(const std::string & name) {
+    build.function()->addLocal(name);
 }
 
-void CodeGen::emitNum(OrbitCode code, double arg) {
-    auto* instruction = builder_.function()->addInstruction(code);
-    instruction->setOperand(builder_.addConstant(arg));
-    builder_.function()->finishInstruction();
+void generation::Number(OrbitCode code, double arg) {
+    auto* instruction = build.function()->addInstruction(code);
+    instruction->setOperand(build.addConstant(arg));
+    build.function()->finishInstruction();
 }
 
-void CodeGen::emitVar(OrbitCode code, const std::string & arg) {
-    auto* instruction = builder_.function()->addInstruction(code);
-    instruction->setOperand(builder_.function()->getLocal(arg));
-    builder_.function()->finishInstruction();
+void generation::instructions(OrbitCode code, const std::string & arg, std::string operand){//my own code 
+    auto* instruction = build.function()->addInstruction(code);
+    if (operand == "getlocal"){
+        instruction->setOperand(build.function()->getLocal(arg));
+    }
+    if (operand == "setoperand"){
+        instruction->setOperand(arg);
+    }
+    if (operand == "addconstant"){
+        instruction->setOperand(build.addConstant(arg));
+    }
+    build.function()->finishInstruction();
 }
 
-void CodeGen::emitJump(OrbitCode code, const std::string & label) {
-    auto* instruction = builder_.function()->addInstruction(code);
-    instruction->setOperand(label);
-    builder_.function()->finishInstruction();
+void generation::Variable(OrbitCode code, const std::string & arg) {//my own code 
+    instructions(code, arg, "getlocal");
 }
 
+void generation::Leap(OrbitCode code, const std::string & label) {//my own code 
+    instructions(code, label, "setoperand");
 
-void CodeGen::emitString(OrbitCode code, const std::string & str) {
-    auto* instruction = builder_.function()->addInstruction(code);
-    instruction->setOperand(builder_.addConstant(str));
-    builder_.function()->finishInstruction();
 }
 
-void CodeGen::emit(OrbitCode code) {
-    builder_.function()->addInstruction(code);
-    builder_.function()->finishInstruction();
+void generation::emitString(OrbitCode code, const std::string & str) {//my own code 
+    instructions(code, str, "addconstant");
 }
 
-void CodeGen::emitLabel(const std::string & label) {
-    builder_.function()->addSymbol(label);
+void generation::emit(OrbitCode code) {
+    build.function()->addInstruction(code);
+    build.function()->finishInstruction();
+}
+
+void generation::labels(const std::string & label) {
+    build.function()->addSymbol(label);
 }

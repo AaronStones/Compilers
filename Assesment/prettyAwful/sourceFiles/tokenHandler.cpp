@@ -1,3 +1,6 @@
+//Name - Aaron Stones
+//Module Code - CMP409
+//Date - 12/04/2020
 #include "tokenHandler.hpp"
 
 const std::string lexToke::ident = "IDENTIFIER";
@@ -5,7 +8,7 @@ const std::string lexToke::real = "REAL";
 const std::string lexToke::invT = "TOKEN INVALID";
 const std::string lexToke::inte = "INTEGER";
 const std::string lexToke::eof = "EOF";
-const std::string lexToke::invC  = "CHARACTER INVALID";
+const std::string lexToke::invC  = "CHARACTER INVALID"; //log types of token errors
 
 
 lexToke::lexToke(const std::string& def_, const std::string& contains_, std::uint64_t lineNumber_, std::uint64_t columnNumber_)
@@ -30,7 +33,7 @@ std::ostream& operator<<(std::ostream& cmdOut, const lexToke& lex) {
         output += " ";
     }
     output += "*";
-    return cmdOut << output;
+    return cmdOut << output; //output the operator handling errors
 }
 
 

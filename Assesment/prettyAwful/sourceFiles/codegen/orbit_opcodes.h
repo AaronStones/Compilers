@@ -13,7 +13,8 @@
 //  The first parameter is the opcode's mnemonic, the second the number of
 //  bytes following the opcode in the bytecode stream that should be read as
 //  argument.
-//
+//no changes have been made to these files as they contain orbatism (a concept I am unfamiliar with)
+
 #ifndef OPCODE
 #define OPCODE(_, _, _)
 #endif

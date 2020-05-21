@@ -1,3 +1,7 @@
+//Name - Aaron Stones
+//Module Code - CMP409
+//Date - 12/04/2020
+
 #pragma once
 #include <cstring>
 #include <iostream>

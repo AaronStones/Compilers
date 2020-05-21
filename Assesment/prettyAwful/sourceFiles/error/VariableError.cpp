@@ -1,3 +1,6 @@
+//Name - Aaron Stones
+//Module Code - CMP409
+//Date - 12/04/2020
 #include "VariableError.hpp"
 
 VariableError::VariableError(rec<lexToke> token, rec<lexToke> varDecl, const std::string& message): reportErr(token, message), userDecl(varDecl) {}
@@ -6,7 +9,7 @@ VariableError::~VariableError() {
     
 }
 
-void VariableError::print(std::ostream& out) const {
+void VariableError::print(std::ostream& out) const { //my own code
 
     reportErr::print(out);
     
@@ -21,5 +24,5 @@ void VariableError::print(std::ostream& out) const {
     if (complete != true){
         val = val + "\n";
         out << val << *userDecl;
-    }
+    } //output the variabel error
 }

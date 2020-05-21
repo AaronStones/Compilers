@@ -1,0 +1,10 @@
+PROGRAM unVar 
+WITH 
+	j AS REAL
+	factor AS INTEGER
+	factor1, factor, factor2 AS REAL
+IN
+    i = 123
+    OUTPUT i * j
+    OUPTUT factor * factor1 
+END

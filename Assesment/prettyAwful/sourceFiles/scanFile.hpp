@@ -1,3 +1,6 @@
+//Name - Aaron Stones
+//Module Code - CMP409
+//Date - 12/04/2020
 #pragma once
 #include <iostream>
 #include "tokenHandler.hpp"
@@ -30,8 +33,7 @@ public:
     void getCharacter();
     int whiteSpace(char x);
     static const vec<std::string> hotKeys;
-    int intCheck(char x);
-    int realCheck(char x);
+    int intCheck(char x), realCheck(char x);
     const rec<lexToke> getNToken();
     
 

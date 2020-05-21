@@ -1,3 +1,6 @@
+//Name - Aaron Stones
+//Module Code - CMP409
+//Date - 12/04/2020
 #include <algorithm>
 #include "scanFile.hpp"
 #include <sstream>
@@ -13,36 +16,36 @@ scanFile::scanFile(std::istream& fileInput)
 
 
 
-const vec<std::string> scanFile::hotKeys = {
+const vec<std::string> scanFile::hotKeys = { //all of the pre-defined functions in the PAL language
 	"PROGRAM", "IN", "WITH", "END", "AS", "INTEGER", "REAL", "REPEAT","UNTIL",
     "ENDIF", "IF", "ELSE", "THEN", "ENDLOOP", "OUTPUT", "INPUT"
 };
-void scanFile::getCharacter() {
-    if(character != 25) { 
+void scanFile::getCharacter() { //my own code
+    if(character != 25) {  //if the chracter detected is not 25
         
         lineIndex++;
 
         if(lineString.size() > lineIndex) {
-            character = lineString[lineIndex];
+            character = lineString[lineIndex]; //return the line
             return;
         }
         
-        if(inFile.eof() != true) {
+        if(inFile.eof() != true) { //while we are not at the end of the file
             std::getline(inFile, lineString);
-            lineString = lineString + "\n";
+            lineString = lineString + "\n"; //ensure this is the end of the line
             lineNum++;
             lineIndex = 0;
-            character = lineString.front();
+            character = lineString.front(); //get the first element of the line
 
         }
         else{
-            character = 25;
+            character = 25; //end compilation
             return;
         }
     }
 }
 
-const rec<lexToke> scanFile::getNToken() {
+const rec<lexToke> scanFile::getNToken() { //my own code
     int Line, Column;
     rec<lexToke> errorToken;
     std::stringstream buffer;
@@ -140,8 +143,8 @@ const rec<lexToke> scanFile::getNToken() {
     return (tokens = errorToken);
 }
 
-int scanFile::whiteSpace(char x) {
-    if(std::isalpha(x)) {
+int scanFile::whiteSpace(char x) { //my own code
+    if(std::isalpha(x)) { //decipher what type of character is currently being analysed
         return 1;
     }
     else if(std::isdigit(x)) {
@@ -158,8 +161,8 @@ int scanFile::whiteSpace(char x) {
     }
 }
 
-int scanFile::intCheck(char x) {
-    if(x == '.') {
+int scanFile::intCheck(char x) { //my own code
+    if(x == '.') { //check the type being parsed is actually an integer
         return 1;
     }
     if(std::isdigit(x) == true) {
@@ -171,8 +174,8 @@ int scanFile::intCheck(char x) {
     }
 }
 
-int scanFile::realCheck(char x) {
-    if(std::isdigit(x)) {
+int scanFile::realCheck(char x) { //my own code
+    if(std::isdigit(x)) { //check what is being parsed is a REAL number
         return 1;
     }
     else {

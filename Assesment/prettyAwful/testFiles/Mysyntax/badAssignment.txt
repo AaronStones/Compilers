@@ -1,0 +1,7 @@
+PROGRAM factorial
+WITH i, n, factorial AS INTEGER
+IN
+    i = i
+    i := 3
+    i := 4
+END

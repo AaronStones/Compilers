@@ -10,6 +10,8 @@ struct ILFunction;
 struct ILConstant;
 class ILBuilder;
 
+//no changes have been made to these files as they contain orbatism (a concept I am unfamiliar with)
+
 struct ILInstruction {
     
     enum class OperandSize {

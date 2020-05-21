@@ -1,3 +1,6 @@
+//Name - Aaron Stones
+//Module Code - CMP409
+//Date - 12/04/2020
 #include <fstream>
 #include <iostream>
 #include <cstdlib>
@@ -36,21 +39,24 @@ int main(int num, const char** arguments) {
         for(const auto& errList : parseAna.errors()) {
             std::cerr << *errList << std::endl;
         }
-
-        if (parseAna.errors().size() > 1){
-            std::cerr << parseAna.errors().size() << " errors generated" << std::endl;
+        switch (parseAna.errors().size()){
+            case 0:
+                std::cerr << "code compiled successfully!\n";
+            break;
+            case 1:
+                std::cerr << parseAna.errors().size() << " error generated\n";
+            break;
+            default :
+                std::cerr << parseAna.errors().size() << " errors generated\n";
+            break;
         }
-        else {
-            std::cerr << parseAna.errors().size() << " error generated" << std::endl;
-        }
-
     } 
     else {
         std::ofstream out{outfile};
         if(!out.is_open()) {
             return exitComp("cannot open '" + outfile + "' for reading");
         }
-        parseAna.generator().writeModule(out);
+        parseAna.generator().startMod(out);
     }
 }
 
